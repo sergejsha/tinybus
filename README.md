@@ -143,6 +143,23 @@ public AnotherFragment extends Fragment {
 }
 ```
 
+Alternatively, you can create a single event bus instance and store it inside your application as following.
+
+```java
+public App extends Application implements BusDepot {
+
+    private final Bus mBus = new Bus();
+  
+    @Override
+    public Bus getBus() {
+        return mBus;
+    }
+  
+}
+```
+
+Use the same, already mentioned, ```TinyBus.from(Context context)``` method to access the instance of event bus in activity or fragment.
+
 
 Event dispatching
 =======
@@ -156,7 +173,7 @@ Event is dispatched in calling thread to all registered subscribers sequentially
 Relation to Otto event bus 
 =======
 
-Fist of all TinyBus respects the work and keeps copyright notes of all parts adopted from [Otto][2] project. At the same time TinyBus is not a fork of Otto project. TinyBus uses very similar interfaces but it has different implementation with a slightly different behavior written from scratch. The main difference to Otto is that TinyBus is optimized for startup and event dispatching performance.
+Fist of all TinyBus respects the work and keeps copyright notes of all parts adopted from [Otto][2] project. At the same time TinyBus is not a direct fork of Otto project. TinyBus uses very similar interfaces but it has different implementation with a slightly different behavior written from scratch. The main difference to Otto is that TinyBus is optimized for startup and event dispatching performance.
 
  * It doesn't create additional objects while dispatching an event. This allows you to use it in projects where many events get dispatched frequently.
  * TinyBus is designed to be called from a single thread only. In most cases this is Main Thread. It doesn't use synchronized classes, which makes it fast.
