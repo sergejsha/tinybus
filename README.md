@@ -1,4 +1,4 @@
 tinybus
 =======
 
-A lightweight, easy to use event bus for Android
+A lightweight and simple event bus for Android
