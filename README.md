@@ -173,7 +173,7 @@ Event is dispatched in calling thread to all registered subscribers sequentially
 Relation to Otto event bus 
 =======
 
-TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. Although TinyBus uses very similar interfaces, it has different implementation with a slightly different behavior written from scratch. The main difference to Otto is that TinyBus is optimized for startup and event dispatching performance.
+TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. Although it uses very similar interfaces, TinyBus has different implementation with a slightly different behavior written from scratch. The main difference to Otto is that TinyBus is optimized for startup and event dispatching performance.
 
  * It doesn't create additional objects while dispatching an event. This allows you to use it in projects where many events get dispatched frequently.
  * TinyBus is designed to be called from a single thread only. In most cases this is Main Thread. It doesn't use synchronized classes, which makes it fast.
