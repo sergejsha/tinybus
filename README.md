@@ -18,7 +18,7 @@ public class MainActivity extends Activity implements BusDepot {
 
     // 1. First we need to implement BusDepot interface
 
-    private Bus mBus = new TinyBus();
+    private final Bus mBus = new TinyBus();
 
     @Override
     public Bus getBus() {
