@@ -1,8 +1,6 @@
 
 
 ![tinybus][1]
-
-
 =======
 
 A lightweight and simple event bus for Android. 
@@ -168,6 +166,41 @@ Fist of all TinyBus respects the work and keeps copyright notes of all parts ado
 Functional correctness 
 =======
 Functional correctness - a prove that event bus does exaclty what it has to do - is very importaint. That's why TinyBus has over 40 test-cases checking its functionality.
+
+
+How to build
+=======
+
+1. git clone git@github.com:beworker/tinybus.git
+2. cd <git>/tinybus
+3. ant release
+
+
+How to execute JUnit tests
+=======
+
+1. cd <git>/tinybus-tests
+2. ant test
+
+
+License
+=======
+
+    Copyright 2014 Sergej Shafarenka, halfbit.de
+    Copyright (C) 2012 Square, Inc.
+    Copyright (C) 2007 The Guava Authors
+    
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 
 
 [1]: web/logo.png
