@@ -199,6 +199,15 @@ How to execute JUnit tests
 1. cd <git>/tinybus-tests
 2. ant test
 
+Proguard configuration
+=======
+
+```
+-keepclassmembers class ** {
+    @com.halfbit.tinybus.Subscribe public *;
+    @com.halfbit.tinybus.Produce public *;
+}
+```
 
 License
 =======
