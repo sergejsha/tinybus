@@ -14,7 +14,7 @@ Usage example
 =======
 
 ```java
-public MainActivity extends Activity implements BusDepot {
+public class MainActivity extends Activity implements BusDepot {
 
     // 1. First we need to implement BusDepot interface
 
@@ -72,7 +72,7 @@ public class LoadingEvent {
 ```
 
 ```java
-public LoadingFragment extends Fragment {
+public class LoadingFragment extends Fragment {
 
     // 5. Now let's have a fragment, which initiates loading and posts
     // loading event to the bus.
@@ -119,7 +119,7 @@ public LoadingFragment extends Fragment {
 ```
 
 ```java
-public AnotherFragment extends Fragment {
+public class AnotherFragment extends Fragment {
 
     // 9. If we have nother pragment, which needs to receive loading
     // events, we can register it in the very same way.
@@ -146,7 +146,7 @@ public AnotherFragment extends Fragment {
 Alternatively, you can create a single event bus instance and store it inside your application as following.
 
 ```java
-public App extends Application implements BusDepot {
+public class App extends Application implements BusDepot {
 
     private final Bus mBus = new Bus();
   
