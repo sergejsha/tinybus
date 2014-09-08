@@ -1,9 +1,9 @@
 package com.halfbit.tinybus;
 
+import junit.framework.TestCase;
+
 import com.halfbit.tinybus.mocks.Producer1;
 import com.halfbit.tinybus.mocks.Subscriber1;
-
-import junit.framework.TestCase;
 
 public class FailFastTest extends TestCase {
 	
@@ -113,5 +113,21 @@ public class FailFastTest extends TestCase {
 			// OK
 		}
 	}	
+
+	public void testSubscriberThrowsException() {
+		bus.register(new Object() {
+			@Subscribe
+			public void onEvent(String event) {
+				throw new IllegalArgumentException(event);
+			}
+		});
+		
+		try {
+			bus.post("event");
+			fail("exception is expected");
+		} catch (RuntimeException e) {
+			// OK
+		}
+	}
 	
 }

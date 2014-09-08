@@ -107,5 +107,5 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 		
 		subscriber.assertEventsList(events);
 	}
-
+	
 }

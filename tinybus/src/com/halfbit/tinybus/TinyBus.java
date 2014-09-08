@@ -81,7 +81,7 @@ public class TinyBus implements Bus {
 	@Override
 	public void post(Object event) {
 		if (event == null) {
-			throw new IllegalArgumentException("Posting event must not be null");
+			throw new IllegalArgumentException("Event must not be null");
 		}
 		
 		if (mPostingEvent) {
@@ -95,11 +95,13 @@ public class TinyBus implements Bus {
 			mPostingEvent = true;
 			
 			try {
+				
 				while (true) {
 					
-					Class<?> eventClass = event.getClass();
+					final Class<?> eventClass = event.getClass();
 					final HashMap<Class<?>, ObjectMeta> metas = OBJECTS_META;
 					final HashSet<Object> receivers = mEventReceivers.get(eventClass);
+					
 					if (receivers != null) {
 						ObjectMeta meta;
 						Method callback;

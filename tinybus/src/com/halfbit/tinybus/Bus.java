@@ -91,7 +91,8 @@ public interface Bus {
 	
 	/**
 	 * Posts an event to all registered handlers. This method will return successfully after the event has been posted to
-	 * all handlers, and regardless of any exceptions thrown by handlers.
+	 * all handlers if there was no exceptions thrown by handlers. Exceptions in handlers are wrapper with a 
+	 * RuntimeException and re-thrown.
 	 *
 	 * @param event event to post.
 	 * @throws NullPointerException if the event is null.
