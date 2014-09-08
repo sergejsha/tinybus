@@ -101,7 +101,7 @@ public LoadingFragment extends Fragment {
     // preatty much same technics, but we use another TinyBus.from() 
     // factory method to access the bus instance.
     
-    @Oerride
+    @Override
     public void onStart() {
         super.onStart();
         TinyBus.from(getActivity()).register(this);
@@ -124,7 +124,7 @@ public AnotherFragment extends Fragment {
     // 9. If we have nother pragment, which needs to receive loading
     // events, we can register it in the very same way.
 
-    @Oerride
+    @Override
     public void onStart() {
         super.onStart();
         TinyBus.from(getActivity()).register(this);
