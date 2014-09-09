@@ -60,6 +60,7 @@ public class TinyBus implements Bus {
 				mPostponedRegisters = new ArrayList<Object>();
 			}
 			mPostponedRegisters.add(obj);
+			mHasPostponedRegisters = true;
 		} else {
 			registerInternal(obj);
 		}
@@ -92,16 +93,19 @@ public class TinyBus implements Bus {
 			
 		} else {
 			
+			final HashMap<Class<?>, ObjectMeta> metas = OBJECTS_META;
+			
 			mPostingEvent = true;
+			ArrayList<Object> callbacks;
 			
 			try {
 				
 				while (true) {
 					
 					final Class<?> eventClass = event.getClass();
-					final HashMap<Class<?>, ObjectMeta> metas = OBJECTS_META;
 					final HashSet<Object> receivers = mEventReceivers.get(eventClass);
 					
+					// dispatch current event
 					if (receivers != null) {
 						ObjectMeta meta;
 						Method callback;
@@ -121,8 +125,26 @@ public class TinyBus implements Bus {
 						}
 					}
 					
-					applyPostponedObjects();
-					
+					// register / unregister postponed callbacks
+					if (mHasPostponedUnregisters) {
+						callbacks = new ArrayList<Object>(mPostponedUnregisters);
+						mPostponedUnregisters.clear();
+						mHasPostponedUnregisters = false;
+						for (Object object : callbacks) {
+							unregisterInternal(object);
+						}
+					}
+
+					if (mHasPostponedRegisters) {
+						callbacks = new ArrayList<Object>(mPostponedRegisters);
+						mPostponedRegisters.clear();
+						mHasPostponedRegisters = false;
+						for (Object object : callbacks) {
+							registerInternal(object);
+						}
+					}
+
+					// get next event if such, or exit
 					if (mPostponedEvents != null && mPostponedEvents.size() > 0) {
 						event = mPostponedEvents.removeFirst();
 					} else {
@@ -149,40 +171,12 @@ public class TinyBus implements Bus {
 	
 	private boolean mPostingEvent;
 	private boolean mHasPostponedUnregisters;
+	private boolean mHasPostponedRegisters;
 	
 	private LinkedList<Object> mPostponedEvents;
 	private ArrayList<Object> mPostponedRegisters;
 	private ArrayList<Object> mPostponedUnregisters;
 
-	
-	private void applyPostponedObjects() {
-		ArrayList<Object> unregisters = null;
-		ArrayList<Object> registers = null;
-		
-		if (mHasPostponedUnregisters) {
-			unregisters = new ArrayList<Object>(mPostponedUnregisters);
-			mPostponedUnregisters.clear();
-			mHasPostponedUnregisters = false;
-		}
-
-		if (mPostponedRegisters != null && mPostponedRegisters.size() > 0) {
-			registers = new ArrayList<Object>(mPostponedRegisters);
-			mPostponedRegisters.clear();
-		}
-
-		if (unregisters != null) {
-			for (Object object : unregisters) {
-				unregisterInternal(object);
-			}
-		}
-		
-		if (registers != null) {
-			for (Object object : registers) {
-				registerInternal(object);
-			}
-		}
-	}
-	
 	private void registerInternal(Object obj) {
 		ObjectMeta meta = OBJECTS_META.get(obj.getClass());
 		if (meta == null) {
