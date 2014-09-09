@@ -98,7 +98,7 @@ public class LoadingFragment extends Fragment {
     
     // 7. To be able to produce events, producer has to be registered 
     // onto the bus. To register a fragment as a listener, we use 
-    // preatty much same technics, but we use another TinyBus.from() 
+    // pretty much same techniques, but we use another TinyBus.from() 
     // factory method to access the bus instance.
     
     @Override
@@ -121,7 +121,7 @@ public class LoadingFragment extends Fragment {
 ```java
 public class AnotherFragment extends Fragment {
 
-    // 9. If we have nother pragment, which needs to receive loading
+    // 9. If we have another fragment, which needs to receive loading
     // events, we can register it in the very same way.
 
     @Override
@@ -182,7 +182,7 @@ TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus
 
 Functional correctness 
 =======
-Functional correctness - a prove that event bus does exaclty what it has to do - is very importaint. That's why TinyBus has over 40 test-cases checking its functionality.
+Functional correctness - a prove that event bus does exaclty what it has to do - is very important. That's why TinyBus has over 40 test-cases checking its functionality.
 
 
 How to build
