@@ -160,7 +160,7 @@ public class TinyBus implements Bus {
 
 	//-- private methods
 	
-	private HashMap<Class<?>/*receiver or producer class*/, ObjectMeta> OBJECTS_META 
+	private static HashMap<Class<?>/*receiver or producer class*/, ObjectMeta> OBJECTS_META 
 		= new HashMap<Class<?>, ObjectMeta>();
 	
 	private HashMap<Class<?>/*event class*/, HashSet<Object>/*multiple receiver objects*/> mEventReceivers
