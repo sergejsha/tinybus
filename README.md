@@ -44,7 +44,7 @@ public class MainActivity extends Activity implements BusDepot {
   
     // 3. Now activity is able to receive events. Let's implement a callback
     // method for an event of type LoadingEvent. Callback must be a public
-    // methow with @Subscribe annotation.
+    // method with @Subscribe annotation.
     
     @Subscribe
     public void onLoadingEvent(LoadingEvent event) {
@@ -74,7 +74,7 @@ public class LoadingEvent {
 ```java
 public class LoadingFragment extends Fragment {
 
-    // 5. Now let's have a fragment, which initiates loading and posts
+    // 5. Now let's have a fragment which initiates loading and posts
     // loading event to the bus.
 
     private LoadingEvent mLoadingEvent;
@@ -212,7 +212,7 @@ Proguard configuration
 License
 =======
 
-    Copyright 2014 Sergej Shafarenka, halfbit.de
+    Copyright (c) 2014 Sergej Shafarenka, halfbit.de
     Copyright (C) 2012 Square, Inc.
     Copyright (C) 2007 The Guava Authors
     
