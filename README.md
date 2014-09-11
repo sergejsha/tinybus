@@ -3,10 +3,10 @@
 ![tinybus][1]
 =======
 
-A lightweight and simple event bus for Android. 
+A lightweight event bus with easy to use API optimized for Android.
 
  - small footprint
- - simple to use
+ - easy to use
  - optimized for startup and event dispatching
 
 
@@ -16,7 +16,9 @@ Usage example
 ```java
 public class MainActivity extends Activity implements BusDepot {
 
-    // 1. First we need to implement BusDepot interface
+    // 1. First we need to implement BusDepot interface. BusDepot returns 
+    // an instance of event bus which is to be used by all other
+    // components inside this activity.
 
     private final Bus mBus = new TinyBus();
 
@@ -167,7 +169,7 @@ Event dispatching
 Event is dispatched in calling thread to all registered subscribers sequentially.
 
  * If another event gets posted while handling current event in a subscriber, then the bus completes dispatching of current event first, and then dispatches the new event.
- * TinyBus does not dispatch ```null``` events coming from a producer method. Such values are silently ignored.
+ * TinyBus does *not* dispatch ```null``` events coming from a producer method. Such values are silently ignored.
 
 
 Relation to Otto event bus 
@@ -177,7 +179,8 @@ TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus
 
  * It doesn't create additional wrapper objects while dispatching an event. This allows you to use it in projects where many events get dispatched frequently.
  * TinyBus is designed to be called from a single thread only. In most cases this is Main Thread. It doesn't use synchronized classes, which makes it fast.
- * TinyBus does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty these events, which makes it fast.
+ * TinyBus does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty these event types, which makes it fast.
+ * TinyBus provides easy to use ```TinyBus.from(Context context)``` method for conveniently access bus instance from inside any Androd component.
 
 
 Functional correctness 
