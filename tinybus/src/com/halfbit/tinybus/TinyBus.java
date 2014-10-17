@@ -16,12 +16,12 @@
 package com.halfbit.tinybus;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.Queue;
 
 import android.content.Context;
 
@@ -50,115 +50,11 @@ public class TinyBus implements Bus {
 		}
 		throw new IllegalArgumentException("Make sure Activity or Application implements BusDepot interface.");
 	}
-	
-	//-- public api
-	
-	@Override
-	public void register(Object obj) {
-		if (mPostingEvent) {
-			if (mPostponedRegisters == null) {
-				mPostponedRegisters = new ArrayList<Object>();
-			}
-			mPostponedRegisters.add(obj);
-			mHasPostponedRegisters = true;
-		} else {
-			registerInternal(obj);
-		}
-	}
-	
-	@Override
-	public void unregister(Object obj) {
-		if (mPostingEvent) {
-			if (mPostponedUnregisters == null) {
-				mPostponedUnregisters = new ArrayList<Object>();
-			}
-			mPostponedUnregisters.add(obj);
-			mHasPostponedUnregisters = true;
-		} else {
-			unregisterInternal(obj);
-		}
-	}
-	
-	@Override
-	public void post(Object event) {
-		if (event == null) {
-			throw new IllegalArgumentException("Event must not be null");
-		}
-		
-		if (mPostingEvent) {
-			if (mPostponedEvents == null) {
-				mPostponedEvents = new LinkedList<Object>();
-			}
-			mPostponedEvents.add(event);
-			
-		} else {
-			
-			final HashMap<Class<?>, ObjectMeta> metas = OBJECTS_META;
-			
-			mPostingEvent = true;
-			ArrayList<Object> callbacks;
-			
-			try {
-				
-				while (true) {
-					
-					final Class<?> eventClass = event.getClass();
-					final HashSet<Object> receivers = mEventReceivers.get(eventClass);
-					
-					// dispatch current event
-					if (receivers != null) {
-						ObjectMeta meta;
-						Method callback;
-						try {
-							boolean ignoreObject = false;
-							for (Object receiver : receivers) {
-								ignoreObject = mHasPostponedUnregisters && mPostponedUnregisters.contains(receiver);
-								if (!ignoreObject) {
-									meta = metas.get(receiver.getClass());
-									callback = meta.getEventCallback(eventClass);
-									callback.invoke(receiver, event);
-								}
-							}
-							
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-					}
-					
-					// register / unregister postponed callbacks
-					if (mHasPostponedUnregisters) {
-						callbacks = new ArrayList<Object>(mPostponedUnregisters);
-						mPostponedUnregisters.clear();
-						mHasPostponedUnregisters = false;
-						for (Object object : callbacks) {
-							unregisterInternal(object);
-						}
-					}
 
-					if (mHasPostponedRegisters) {
-						callbacks = new ArrayList<Object>(mPostponedRegisters);
-						mPostponedRegisters.clear();
-						mHasPostponedRegisters = false;
-						for (Object object : callbacks) {
-							registerInternal(object);
-						}
-					}
-
-					// get next event if such, or exit
-					if (mPostponedEvents != null && mPostponedEvents.size() > 0) {
-						event = mPostponedEvents.removeFirst();
-					} else {
-						break;
-					}
-				}
-				
-			} finally {
-				mPostingEvent = false;
-			}
-		}
-	}
-
-	//-- private methods
+	//-- members
+	
+	private static final int QUEUE_SIZE = 26;
+	private static final boolean DEBUG = false;
 	
 	private static HashMap<Class<?>/*receiver or producer class*/, ObjectMeta> OBJECTS_META 
 		= new HashMap<Class<?>, ObjectMeta>();
@@ -169,14 +65,59 @@ public class TinyBus implements Bus {
 	private HashMap<Class<?>/*event class*/, Object/*single producer objects*/> mEventProducers
 		= new HashMap<Class<?>, Object>(); 
 	
-	private boolean mPostingEvent;
-	private boolean mHasPostponedUnregisters;
-	private boolean mHasPostponedRegisters;
+	//private final Queue<Object> mTasks = new ConcurrentLinkedQueue<Object>();
+	private final Queue<Object> mTasks = new ArrayDeque<Object>(QUEUE_SIZE);
+	private boolean mProcessing;
 	
-	private LinkedList<Object> mPostponedEvents;
-	private ArrayList<Object> mPostponedRegisters;
-	private ArrayList<Object> mPostponedUnregisters;
+	//-- public api
+	
+	@Override
+	public void register(Object obj) {
+		mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+		if (!mProcessing) processQueue();
+	}
 
+	@Override
+	public void unregister(Object obj) {
+		mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+		if (!mProcessing) processQueue();
+	}
+
+	@Override
+	public void post(Object event) {
+		if (event == null) throw new IllegalArgumentException("event cannot be null");
+		
+		mTasks.offer(event);
+		if (!mProcessing) processQueue();
+	}
+	
+	//-- private methods
+	
+	private void processQueue() {
+		if (DEBUG) {
+			if (mProcessing) throw new IllegalStateException("already processing");
+		}
+		
+		mProcessing = true;
+		Object obj;
+		
+		while((obj = mTasks.poll()) != null) {
+			if (obj instanceof Task) {
+				Task task = (Task) obj;
+				switch (task.code) {
+					case Task.CODE_REGISTER: registerInternal(task.obj); break;
+					case Task.CODE_UNREGISTER: unregisterInternal(task.obj); break;
+					default: throw new IllegalStateException("unsupported task code: " + task.code);
+				}
+				task.recycle();
+			} else {
+				postInternal(obj);
+			}
+		}
+		
+		mProcessing = false;
+	}
+	
 	private void registerInternal(Object obj) {
 		ObjectMeta meta = OBJECTS_META.get(obj.getClass());
 		if (meta == null) {
@@ -186,9 +127,7 @@ public class TinyBus implements Bus {
 		meta.registerAtReceivers(obj, mEventReceivers);
 		meta.registerAtProducers(obj, mEventProducers);
 		
-		// dispatch from object's producers to all receivers
 		meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META);
-		// dispatch from other's producers to object's receivers
 		meta.dispatchEvents(mEventProducers, obj, OBJECTS_META);
 	}
 	
@@ -198,7 +137,50 @@ public class TinyBus implements Bus {
 		meta.unregisterFromProducers(obj, mEventProducers);
 	}
 	
-	//-- object meta
+	private void postInternal(Object event) {
+		final Class<?> eventClass = event.getClass();
+		final HashSet<Object> receivers = mEventReceivers.get(eventClass);
+		
+		if (receivers != null) {
+			ObjectMeta meta;
+			Method callback;
+			try {
+				for (Object receiver : receivers) {
+					meta = OBJECTS_META.get(receiver.getClass());
+					callback = meta.getEventCallback(eventClass);
+					callback.invoke(receiver, event);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+	
+	//-- inner classes
+	
+	private static class Task {
+		
+		private static final SimplePool<Task> POOL = new SimplePool<Task>(QUEUE_SIZE);
+		
+		public static final int CODE_REGISTER = 0;
+		public static final int CODE_UNREGISTER = 1;
+		
+		public int code;
+		public Object obj;
+		
+		public static Task obtainTask(Object obj, int code) {
+			Task task = POOL.acquire();
+			if (task == null) task = new Task();
+			task.code = code;
+			task.obj = obj;
+			return task;
+		}
+		
+		public void recycle() {
+			POOL.release(this);
+		}
+	}
+	
 	
 	private static class ObjectMeta {
 
@@ -254,13 +236,17 @@ public class TinyBus implements Bus {
 				if (targetReceivers != null && targetReceivers.size() > 0) {
 					event = produceEvent(eventClass, obj);
 					if (event != null) {
+						System.out.println("dispatching to receivers !!!");
 						for (Object receiver : targetReceivers) {
 							meta = metas.get(receiver.getClass());
+							System.out.println("receivers before : " + targetReceivers.size());
 							meta.dispatchEventIfCallback(eventClass, event, receiver);
+							System.out.println("receivers after : " + targetReceivers.size());
 						}
 					}
 				}
 			}
+			
 		}
 
 		public void dispatchEvents(
@@ -342,6 +328,9 @@ public class TinyBus implements Bus {
 			
 			Class<? extends Object> key;
 			HashSet<Object> eventReceivers;
+			
+			System.out.println("changing receivers !!!");
+			
 			while (keys.hasNext()) {
 				key = keys.next();
 				eventReceivers = receivers.get(key);
@@ -376,5 +365,73 @@ public class TinyBus implements Bus {
 			}
 		}
 	}	
+	
+	/*
+	 * Copyright (C) 2013 The Android Open Source Project
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+    public static class SimplePool<T> {
+        private final Object[] mPool;
+        private int mPoolSize;
+
+        /**
+         * Creates a new instance.
+         *
+         * @param maxPoolSize The max pool size.
+         *
+         * @throws IllegalArgumentException If the max pool size is less than zero.
+         */
+        public SimplePool(int maxPoolSize) {
+            if (maxPoolSize <= 0) {
+                throw new IllegalArgumentException("The max pool size must be > 0");
+            }
+            mPool = new Object[maxPoolSize];
+        }
+
+        @SuppressWarnings("unchecked")
+        public T acquire() {
+            if (mPoolSize > 0) {
+                final int lastPooledIndex = mPoolSize - 1;
+                T instance = (T) mPool[lastPooledIndex];
+                mPool[lastPooledIndex] = null;
+                mPoolSize--;
+                return instance;
+            }
+            return null;
+        }
+
+        public boolean release(T instance) {
+            if (isInPool(instance)) {
+                throw new IllegalStateException("Already in the pool!");
+            }
+            if (mPoolSize < mPool.length) {
+                mPool[mPoolSize] = instance;
+                mPoolSize++;
+                return true;
+            }
+            return false;
+        }
+
+        private boolean isInPool(T instance) {
+            for (int i = 0; i < mPoolSize; i++) {
+                if (mPool[i] == instance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
 	
 }
