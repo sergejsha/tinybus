@@ -236,12 +236,9 @@ public class TinyBus implements Bus {
 				if (targetReceivers != null && targetReceivers.size() > 0) {
 					event = produceEvent(eventClass, obj);
 					if (event != null) {
-						System.out.println("dispatching to receivers !!!");
 						for (Object receiver : targetReceivers) {
 							meta = metas.get(receiver.getClass());
-							System.out.println("receivers before : " + targetReceivers.size());
 							meta.dispatchEventIfCallback(eventClass, event, receiver);
-							System.out.println("receivers after : " + targetReceivers.size());
 						}
 					}
 				}
@@ -328,8 +325,6 @@ public class TinyBus implements Bus {
 			
 			Class<? extends Object> key;
 			HashSet<Object> eventReceivers;
-			
-			System.out.println("changing receivers !!!");
 			
 			while (keys.hasNext()) {
 				key = keys.next();
