@@ -112,7 +112,7 @@ public class RegisterUnregisterInsidePostTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus();
+		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
 		listeningSubscriber1 = new ListeningSubscriber();
 		listeningSubscriber2 = new ListeningSubscriber();
 		selfUnregisteringSubscriber = new SelfUnregisteringSubscriber();

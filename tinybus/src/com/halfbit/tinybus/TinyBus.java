@@ -24,11 +24,10 @@ import java.util.Map.Entry;
 import java.util.Queue;
 
 import android.content.Context;
+import android.os.Looper;
 
 public class TinyBus implements Bus {
 	
-	//-- factory methods
-
 	/**
 	 * Use this method to get a bus instance available in current context. Do not forget to
 	 * implement {@link com.halfbit.tinybus.BusDepot} in your activity or application to make
@@ -51,53 +50,86 @@ public class TinyBus implements Bus {
 		throw new IllegalArgumentException("Make sure Activity or Application implements BusDepot interface.");
 	}
 
-	//-- members
+	//-- static members
 	
-	private static final int QUEUE_SIZE = 26;
-	private static final boolean DEBUG = false;
+	// set it to true to check whether you access the bus from the right thread 
+	private static final boolean ACCERT_ACCESS = false;
 	
-	private static HashMap<Class<?>/*receiver or producer class*/, ObjectMeta> OBJECTS_META 
-		= new HashMap<Class<?>, ObjectMeta>();
+	private static final int QUEUE_SIZE = 12;
+	private static final AccessAssertion MAIN_THREAD_CHECKER = new MainThreadAssertion();
 	
-	private HashMap<Class<?>/*event class*/, HashSet<Object>/*multiple receiver objects*/> mEventReceivers
-		= new HashMap<Class<?>, HashSet<Object>>();
+	// cached objects meta data
+	private static final HashMap<Class<?> /*receivers or producer*/, ObjectMeta> 
+		OBJECTS_META = new HashMap<Class<?>, ObjectMeta>();
 	
-	private HashMap<Class<?>/*event class*/, Object/*single producer objects*/> mEventProducers
-		= new HashMap<Class<?>, Object>(); 
+	//-- fields
 	
-	//private final Queue<Object> mTasks = new ConcurrentLinkedQueue<Object>();
+	private final HashMap<Class<?>/*event class*/, HashSet<Object>/*multiple receiver objects*/>
+		mEventReceivers = new HashMap<Class<?>, HashSet<Object>>();
+	
+	private final HashMap<Class<?>/*event class*/, Object/*single producer objects*/>
+		mEventProducers = new HashMap<Class<?>, Object>(); 
+	
 	private final Queue<Object> mTasks = new ArrayDeque<Object>(QUEUE_SIZE);
+	private final AccessAssertion mAccessAssertion;
+	
 	private boolean mProcessing;
 	
 	//-- public api
+
+	public TinyBus() {
+		this(MAIN_THREAD_CHECKER);
+	}
+	
+	TinyBus(AccessAssertion checker) {
+		mAccessAssertion = checker;
+	}
 	
 	@Override
 	public void register(Object obj) {
-		mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
-		if (!mProcessing) processQueue();
+		if (obj == null) throw new IllegalArgumentException("Object must not be null");
+		
+		if (mProcessing) {
+			mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+			
+		} else {
+			if (ACCERT_ACCESS) mAccessAssertion.assertAccess();
+			mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+			processQueue();
+		}
 	}
 
 	@Override
 	public void unregister(Object obj) {
-		mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
-		if (!mProcessing) processQueue();
+		if (obj == null) throw new IllegalArgumentException("Object must not be null");
+		
+		if (mProcessing) {
+			mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+			
+		} else {
+			if (ACCERT_ACCESS) mAccessAssertion.assertAccess();
+			mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+			processQueue();
+		}
 	}
 
 	@Override
 	public void post(Object event) {
-		if (event == null) throw new IllegalArgumentException("event cannot be null");
+		if (event == null) throw new IllegalArgumentException("Event must not be null");
 		
-		mTasks.offer(event);
-		if (!mProcessing) processQueue();
+		if (mProcessing) {
+			mTasks.offer(event);
+			
+		} else {
+			if (ACCERT_ACCESS) mAccessAssertion.assertAccess();
+			mTasks.offer(event);			
+			processQueue();
+		}
 	}
 	
 	//-- private methods
 	
 	private void processQueue() {
-		if (DEBUG) {
-			if (mProcessing) throw new IllegalStateException("already processing");
-		}
-		
 		mProcessing = true;
 		Object obj;
 		
@@ -140,7 +172,6 @@ public class TinyBus implements Bus {
 	private void postInternal(Object event) {
 		final Class<?> eventClass = event.getClass();
 		final HashSet<Object> receivers = mEventReceivers.get(eventClass);
-		
 		if (receivers != null) {
 			ObjectMeta meta;
 			Method callback;
@@ -156,7 +187,7 @@ public class TinyBus implements Bus {
 		}
 	}
 	
-	//-- inner classes
+	//-- task class
 	
 	private static class Task {
 		
@@ -181,6 +212,42 @@ public class TinyBus implements Bus {
 		}
 	}
 	
+	//-- access checkers
+	
+	public static interface AccessAssertion {
+		void assertAccess();
+	}
+	
+	public static class SingleThreadAssertion 
+			implements AccessAssertion {
+
+		private Thread mMasterThread;
+		
+		@Override
+		public void assertAccess() {
+			if (mMasterThread == null) {
+				mMasterThread = Thread.currentThread();
+			} else if (mMasterThread != Thread.currentThread()) {
+				throw new IllegalStateException("TinyBus must be accessed from same thread in which it " 
+						+ "was accessed for the first time. Expected access thread :" 
+						+ mMasterThread + ", while accessed from : " + Thread.currentThread());
+			}
+		}
+	}
+
+	public static class MainThreadAssertion 
+			implements AccessAssertion {
+
+		@Override
+		public void assertAccess() {
+			if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+				throw new IllegalStateException("TinyBus must be accessed from MainThread, while assesed from : " 
+						+ Thread.currentThread());
+			}
+		}
+	}
+	
+	//-- private classes
 	
 	private static class ObjectMeta {
 
@@ -427,6 +494,5 @@ public class TinyBus implements Bus {
             return false;
         }
     }
-
 	
 }

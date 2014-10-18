@@ -14,7 +14,7 @@ public class FailFastTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus();
+		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
 		subscriber = new Subscriber1();
 		producer = new Producer1();
 	}
@@ -90,8 +90,8 @@ public class FailFastTest extends TestCase {
 	public void testRegisterNull() {
 		try {
 			bus.register(null);
-			fail("NPE expected");
-		} catch (NullPointerException e) {
+			fail("IllegalArgumentException expected");
+		} catch (IllegalArgumentException e) {
 			// OK
 		}
 	}
@@ -99,8 +99,8 @@ public class FailFastTest extends TestCase {
 	public void testUnregisterNull() {
 		try {
 			bus.unregister(null);
-			fail("NPE expected");
-		} catch (NullPointerException e) {
+			fail("IllegalArgumentException expected");
+		} catch (IllegalArgumentException e) {
 			// OK
 		}
 	}
@@ -108,7 +108,7 @@ public class FailFastTest extends TestCase {
 	public void testPostNull() {
 		try {
 			bus.post(null);
-			fail("IAE expected");
+			fail("IllegalArgumentException expected");
 		} catch (IllegalArgumentException e) {
 			// OK
 		}

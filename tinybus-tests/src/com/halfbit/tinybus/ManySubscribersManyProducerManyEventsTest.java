@@ -20,7 +20,7 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus();
+		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
 		subscriber1 = new Subscriber1();
 		subscriber2 = new Subscriber2();
 		producer1 = new Producer1();

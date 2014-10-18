@@ -72,7 +72,7 @@ public class PostInsidePostTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus();
+		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
 		subscriberPostingDifferentEvent = new SubscriberPostingDifferentEvent();
 		listeningSubscriber = new ListeningSubscriber();
 		subscriberPostingSameEvent = new SubscriberPostingSameEvent();

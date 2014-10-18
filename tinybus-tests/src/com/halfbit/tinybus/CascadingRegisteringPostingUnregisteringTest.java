@@ -89,7 +89,7 @@ public class CascadingRegisteringPostingUnregisteringTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus();
+		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
 		registrator = new Registrator();
 		listeningSubscriber1 = new ListeningSubscriber();
 		listeningSubscriber2 = new ListeningSubscriber();

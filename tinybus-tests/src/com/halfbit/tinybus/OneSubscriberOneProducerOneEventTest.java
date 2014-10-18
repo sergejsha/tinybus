@@ -17,7 +17,7 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus();
+		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
 		subscriber = new Subscriber1();
 		producer = new Producer1();
 	}
