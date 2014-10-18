@@ -52,8 +52,13 @@ public class TinyBus implements Bus {
 
 	//-- static members
 	
+<<<<<<< Upstream, based on origin/master
 	// set it to true to check whether you access the bus from the right thread 
 	private static final boolean ACCERT_ACCESS = false;
+=======
+	// set it to true if you want the bus to check whether it is called from the right thread 
+	private static final boolean ASSERT_ACCESS = false;
+>>>>>>> 4a2ab24 optional access assertion was added
 	
 	private static final int QUEUE_SIZE = 12;
 	private static final AccessAssertion MAIN_THREAD_CHECKER = new MainThreadAssertion();
@@ -93,7 +98,11 @@ public class TinyBus implements Bus {
 			mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
 			
 		} else {
+<<<<<<< Upstream, based on origin/master
 			if (ACCERT_ACCESS) mAccessAssertion.assertAccess();
+=======
+			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
+>>>>>>> 4a2ab24 optional access assertion was added
 			mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
 			processQueue();
 		}
@@ -107,7 +116,11 @@ public class TinyBus implements Bus {
 			mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
 			
 		} else {
+<<<<<<< Upstream, based on origin/master
 			if (ACCERT_ACCESS) mAccessAssertion.assertAccess();
+=======
+			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
+>>>>>>> 4a2ab24 optional access assertion was added
 			mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
 			processQueue();
 		}
@@ -121,7 +134,11 @@ public class TinyBus implements Bus {
 			mTasks.offer(event);
 			
 		} else {
+<<<<<<< Upstream, based on origin/master
 			if (ACCERT_ACCESS) mAccessAssertion.assertAccess();
+=======
+			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
+>>>>>>> 4a2ab24 optional access assertion was added
 			mTasks.offer(event);			
 			processQueue();
 		}
