@@ -16,12 +16,10 @@
 package com.halfbit.tinybus;
 
 import java.lang.reflect.Method;
-import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Queue;
 
 import android.content.Context;
 import android.os.Looper;
@@ -70,9 +68,10 @@ public class TinyBus implements Bus {
 	private final HashMap<Class<?>/*event class*/, Object/*single producer objects*/>
 		mEventProducers = new HashMap<Class<?>, Object>(); 
 	
-	private final Queue<Object> mTasks = new ArrayDeque<Object>(QUEUE_SIZE);
 	private final AccessAssertion mAccessAssertion;
 	
+	private Task head;
+	private Task tail;
 	private boolean mProcessing;
 	
 	//-- public api
@@ -90,11 +89,11 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new IllegalArgumentException("Object must not be null");
 		
 		if (mProcessing) {
-			mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+			offer(Task.obtainTask(obj, Task.CODE_REGISTER));
 			
 		} else {
 			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
-			mTasks.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+			offer(Task.obtainTask(obj, Task.CODE_REGISTER));
 			processQueue();
 		}
 	}
@@ -104,11 +103,11 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new IllegalArgumentException("Object must not be null");
 		
 		if (mProcessing) {
-			mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+			offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
 			
 		} else {
 			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
-			mTasks.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+			offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
 			processQueue();
 		}
 	}
@@ -118,33 +117,50 @@ public class TinyBus implements Bus {
 		if (event == null) throw new IllegalArgumentException("Event must not be null");
 		
 		if (mProcessing) {
-			mTasks.offer(event);
+			offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
 			
 		} else {
 			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
-			mTasks.offer(event);			
+			offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
 			processQueue();
 		}
 	}
 	
 	//-- private methods
 	
+	private void offer(Task task) {
+		if (tail == null) {
+			tail = head = task;
+		} else {
+			tail.prev = task;
+			tail = task;
+		}
+	}
+	
+	private Task poll() {
+		if (head == null) {
+			return null;
+		} else {
+			Task task = head;
+			head = head.prev;
+			if (head == null) tail = null;
+			return task;
+		}
+	}
+	
 	private void processQueue() {
 		mProcessing = true;
 		Object obj;
 		
-		while((obj = mTasks.poll()) != null) {
-			if (obj instanceof Task) {
-				Task task = (Task) obj;
-				switch (task.code) {
-					case Task.CODE_REGISTER: registerInternal(task.obj); break;
-					case Task.CODE_UNREGISTER: unregisterInternal(task.obj); break;
-					default: throw new IllegalStateException("unsupported task code: " + task.code);
-				}
-				task.recycle();
-			} else {
-				postInternal(obj);
+		while((obj = poll()) != null) {
+			Task task = (Task) obj;
+			switch (task.code) {
+				case Task.CODE_REGISTER: registerInternal(task.obj); break;
+				case Task.CODE_UNREGISTER: unregisterInternal(task.obj); break;
+				case Task.CODE_POST_EVENT: postInternal(task.obj); break;
+				default: throw new IllegalStateException("unsupported task code: " + task.code);
 			}
+			task.recycle();
 		}
 		
 		mProcessing = false;
@@ -195,6 +211,9 @@ public class TinyBus implements Bus {
 		
 		public static final int CODE_REGISTER = 0;
 		public static final int CODE_UNREGISTER = 1;
+		public static final int CODE_POST_EVENT = 2;
+		
+		public Task prev;
 		
 		public int code;
 		public Object obj;
@@ -204,6 +223,7 @@ public class TinyBus implements Bus {
 			if (task == null) task = new Task();
 			task.code = code;
 			task.obj = obj;
+			task.prev = null;
 			return task;
 		}
 		
