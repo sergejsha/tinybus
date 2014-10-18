@@ -214,11 +214,11 @@ public class TinyBus implements Bus {
 	
 	//-- access checkers
 	
-	public static interface AccessAssertion {
+	static interface AccessAssertion {
 		void assertAccess();
 	}
 	
-	public static class SingleThreadAssertion 
+	static class SingleThreadAssertion 
 			implements AccessAssertion {
 
 		private Thread mMasterThread;
@@ -235,7 +235,7 @@ public class TinyBus implements Bus {
 		}
 	}
 
-	public static class MainThreadAssertion 
+	static class MainThreadAssertion 
 			implements AccessAssertion {
 
 		@Override
@@ -427,21 +427,12 @@ public class TinyBus implements Bus {
 			}
 		}
 	}	
-	
-	/*
+
+	/**
 	 * Copyright (C) 2013 The Android Open Source Project
-	 *
-	 * Licensed under the Apache License, Version 2.0 (the "License");
-	 * you may not use this file except in compliance with the License.
-	 * You may obtain a copy of the License at
-	 *
-	 *      http://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 * Unless required by applicable law or agreed to in writing, software
-	 * distributed under the License is distributed on an "AS IS" BASIS,
-	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 * See the License for the specific language governing permissions and
-	 * limitations under the License.
+	 * http://www.apache.org/licenses/LICENSE-2.0
+	 * 
+	 * Modified code from AOSP
 	 */
     public static class SimplePool<T> {
         private final Object[] mPool;
@@ -449,9 +440,7 @@ public class TinyBus implements Bus {
 
         /**
          * Creates a new instance.
-         *
          * @param maxPoolSize The max pool size.
-         *
          * @throws IllegalArgumentException If the max pool size is less than zero.
          */
         public SimplePool(int maxPoolSize) {
@@ -474,22 +463,10 @@ public class TinyBus implements Bus {
         }
 
         public boolean release(T instance) {
-            if (isInPool(instance)) {
-                throw new IllegalStateException("Already in the pool!");
-            }
             if (mPoolSize < mPool.length) {
                 mPool[mPoolSize] = instance;
                 mPoolSize++;
                 return true;
-            }
-            return false;
-        }
-
-        private boolean isInPool(T instance) {
-            for (int i = 0; i < mPoolSize; i++) {
-                if (mPool[i] == instance) {
-                    return true;
-                }
             }
             return false;
         }
