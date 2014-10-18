@@ -52,7 +52,7 @@ public class TinyBus implements Bus {
 
 	//-- static members
 	
-	// set it to true if you want the bus to check whether it is called from the right thread 
+	// set it to true, if you want the bus to check whether it is called from the main thread 
 	private static final boolean ASSERT_ACCESS = false;
 	
 	private static final int QUEUE_SIZE = 12;
