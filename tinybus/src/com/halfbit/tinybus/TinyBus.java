@@ -315,20 +315,24 @@ public class TinyBus implements Bus {
 			Class<? extends Object> eventClass;
 			Entry<Class<? extends Object>, Method> producerCallback;
 			
-			while (producerCallbacks.hasNext()) {
-				producerCallback = producerCallbacks.next();
-				eventClass = producerCallback.getKey();
-				
-				targetReceivers = receivers.get(eventClass);
-				if (targetReceivers != null && targetReceivers.size() > 0) {
-					event = produceEvent(eventClass, obj);
-					if (event != null) {
-						for (Object receiver : targetReceivers) {
-							meta = metas.get(receiver.getClass());
-							meta.dispatchEventIfCallback(eventClass, event, receiver);
+			try {
+				while (producerCallbacks.hasNext()) {
+					producerCallback = producerCallbacks.next();
+					eventClass = producerCallback.getKey();
+					
+					targetReceivers = receivers.get(eventClass);
+					if (targetReceivers != null && targetReceivers.size() > 0) {
+						event = produceEvent(eventClass, obj);
+						if (event != null) {
+							for (Object receiver : targetReceivers) {
+								meta = metas.get(receiver.getClass());
+								meta.dispatchEventIfCallback(eventClass, event, receiver);
+							}
 						}
 					}
 				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
 			}
 			
 		}
@@ -346,36 +350,34 @@ public class TinyBus implements Bus {
 			Object producer;
 			Class<? extends Object> eventClass;
 			
-			while (eventClasses.hasNext()) {
-				eventClass = eventClasses.next();
-				producer = producers.get(eventClass);
-				if (producer != null) {
-					meta = metas.get(producer.getClass());
-					event = meta.produceEvent(eventClass, producer);
-					if (event != null) {
-						dispatchEventIfCallback(eventClass, event, receiver);
+			try {
+				while (eventClasses.hasNext()) {
+					eventClass = eventClasses.next();
+					producer = producers.get(eventClass);
+					if (producer != null) {
+						meta = metas.get(producer.getClass());
+						event = meta.produceEvent(eventClass, producer);
+						if (event != null) {
+							dispatchEventIfCallback(eventClass, event, receiver);
+						}
 					}
 				}
-			}
-		}
-
-		private Object produceEvent(Class<? extends Object> eventClass, Object producer) {
-			Method callback = mProducerCallbacks.get(eventClass);
-			try {
-				return callback.invoke(producer);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
+
 		}
 
-		public void dispatchEventIfCallback(Class<? extends Object> eventClass, Object event, Object receiver) {
+		private Object produceEvent(Class<? extends Object> eventClass, 
+				Object producer) throws Exception {
+			return mProducerCallbacks.get(eventClass).invoke(producer);
+		}
+
+		public void dispatchEventIfCallback(Class<? extends Object> eventClass, 
+				Object event, Object receiver) throws Exception {
 			Method callback = mEventCallbacks.get(eventClass);
 			if (callback != null) {
-				try {
-					callback.invoke(receiver, event);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
+				callback.invoke(receiver, event);
 			}
 		}
 		
@@ -387,7 +389,8 @@ public class TinyBus implements Bus {
 			while (keys.hasNext()) {
 				key = keys.next();
 				if (producers.remove(key) == null) {
-					throw new IllegalArgumentException("Unable to unregister producer, because it wasn't registered before, " + obj);
+					throw new IllegalArgumentException(
+							"Unable to unregister producer, because it wasn't registered before, " + obj);
 				}
 			}
 		}
@@ -400,7 +403,8 @@ public class TinyBus implements Bus {
 			while (keys.hasNext()) {
 				key = keys.next();
 				if (producers.put(key, obj) != null) {
-					throw new IllegalArgumentException("Unable to register producer, because another producer is already registered, " + obj);
+					throw new IllegalArgumentException(
+							"Unable to register producer, because another producer is already registered, " + obj);
 				}
 			}
 		}
@@ -421,7 +425,8 @@ public class TinyBus implements Bus {
 					receivers.put(key, eventReceivers);
 				}
 				if (!eventReceivers.add(obj)) {
-					throw new IllegalArgumentException("Unable to registered receiver because another receiver is already registered: " + obj);
+					throw new IllegalArgumentException(
+							"Unable to registered receiver because it has already been registered: " + obj);
 				}
 			}
 		}
@@ -442,7 +447,8 @@ public class TinyBus implements Bus {
 					fail = !eventReceivers.remove(obj);
 				}
 				if (fail) {
-					throw new IllegalArgumentException("Unregistering receiver which was not registered: " + obj);
+					throw new IllegalArgumentException(
+							"Unregistering receiver which was not registered before: " + obj);
 				}
 			}
 		}
