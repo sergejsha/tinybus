@@ -150,10 +150,9 @@ public class TinyBus implements Bus {
 	
 	private void processQueue() {
 		mProcessing = true;
-		Object obj;
+		Task task;
 		
-		while((obj = poll()) != null) {
-			Task task = (Task) obj;
+		while((task = poll()) != null) {
 			switch (task.code) {
 				case Task.CODE_REGISTER: registerInternal(task.obj); break;
 				case Task.CODE_UNREGISTER: unregisterInternal(task.obj); break;
