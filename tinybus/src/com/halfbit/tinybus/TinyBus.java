@@ -217,6 +217,8 @@ public class TinyBus implements Bus {
 		public int code;
 		public Object obj;
 		
+		private Task() {}
+		
 		public static Task obtainTask(Object obj, int code) {
 			Task task = POOL.acquire();
 			if (task == null) task = new Task();
