@@ -9,6 +9,11 @@ A lightweight event bus with easy to use API optimized for Android.
  - easy to use
  - optimized for startup and event dispatching
 
+Performance comparison tests
+=======
+![tinybus][3]
+
+Executed on Galaxy Nexus device with Android 4.3 (Dalvik).
 
 Usage example
 =======
@@ -234,3 +239,4 @@ License
 
 [1]: web/logo.png
 [2]: https://github.com/square/otto
+[3]: web/performance.png
