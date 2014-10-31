@@ -16,7 +16,6 @@ import junit.framework.TestCase;
  * EventBus by Markus Junginger, greenrobot (http://greenrobot.de)
  * 		https://github.com/greenrobot/EventBus
  * 		http://www.apache.org/licenses/LICENSE-2.0
- * 
  */
 
 public class TinyBusPerformanceTest extends TestCase {

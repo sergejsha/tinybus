@@ -90,8 +90,8 @@ public class FailFastTest extends TestCase {
 	public void testRegisterNull() {
 		try {
 			bus.register(null);
-			fail("IllegalArgumentException expected");
-		} catch (IllegalArgumentException e) {
+			fail("NullPointerException expected");
+		} catch (NullPointerException e) {
 			// OK
 		}
 	}
@@ -99,8 +99,8 @@ public class FailFastTest extends TestCase {
 	public void testUnregisterNull() {
 		try {
 			bus.unregister(null);
-			fail("IllegalArgumentException expected");
-		} catch (IllegalArgumentException e) {
+			fail("NullPointerException expected");
+		} catch (NullPointerException e) {
 			// OK
 		}
 	}
@@ -108,8 +108,8 @@ public class FailFastTest extends TestCase {
 	public void testPostNull() {
 		try {
 			bus.post(null);
-			fail("IllegalArgumentException expected");
-		} catch (IllegalArgumentException e) {
+			fail("NullPointerException expected");
+		} catch (NullPointerException e) {
 			// OK
 		}
 	}	

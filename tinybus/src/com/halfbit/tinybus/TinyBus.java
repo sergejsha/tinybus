@@ -86,7 +86,7 @@ public class TinyBus implements Bus {
 	
 	@Override
 	public void register(Object obj) {
-		if (obj == null) throw new IllegalArgumentException("Object must not be null");
+		if (obj == null) throw new NullPointerException("Object must not be null");
 		
 		if (mProcessing) {
 			offer(Task.obtainTask(obj, Task.CODE_REGISTER));
@@ -100,7 +100,7 @@ public class TinyBus implements Bus {
 
 	@Override
 	public void unregister(Object obj) {
-		if (obj == null) throw new IllegalArgumentException("Object must not be null");
+		if (obj == null) throw new NullPointerException("Object must not be null");
 		
 		if (mProcessing) {
 			offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
@@ -114,7 +114,7 @@ public class TinyBus implements Bus {
 
 	@Override
 	public void post(Object event) {
-		if (event == null) throw new IllegalArgumentException("Event must not be null");
+		if (event == null) throw new NullPointerException("Event must not be null");
 		
 		if (mProcessing) {
 			offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
