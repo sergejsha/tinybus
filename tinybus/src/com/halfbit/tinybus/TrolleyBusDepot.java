@@ -12,7 +12,7 @@ import android.util.Log;
 class TrolleyBusDepot implements ActivityLifecycleCallbacks {
 
 	private static final String TAG = TrolleyBusDepot.class.getSimpleName();
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	
 	private static TrolleyBusDepot INSTANCE;
 	
