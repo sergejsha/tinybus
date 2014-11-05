@@ -21,14 +21,42 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import com.halfbit.tinybus.TrolleyBus.ObjectEvents;
-
 import android.app.Activity;
+import android.content.Context;
 import android.os.Looper;
 
 public class TinyBus implements Bus {
 	
-	//-- static public methods
+	/**
+	 * Use this method to get a bus instance available in current context. Do not forget to
+	 * implement {@link com.halfbit.tinybus.BusDepot} in your activity or application to make
+	 * this method working.
+	 * 
+	 * @see BusDepot
+	 * 
+	 * @param context
+	 * @return	event bus instance, never null
+	 */
+	public static Bus from(Context context) {
+		
+		Bus bus = null;
+		
+		if (context instanceof Activity) {
+			bus = TrolleyBusDepot.get(context).getBus((Activity) context);
+			if (bus != null) return bus;
+		}
+
+		if (context instanceof BusDepot) {
+			return ((BusDepot) context).getBus();
+		} else {
+			context = context.getApplicationContext();
+			if (context instanceof BusDepot) {
+				return ((BusDepot) context).getBus();
+			}
+		}
+		
+		throw new IllegalArgumentException("Make sure Activity or Application implements BusDepot interface.");
+	}
 
 	public static TrolleyBus create(Activity activity) {
 		if (activity == null) {
@@ -42,7 +70,7 @@ public class TinyBus implements Bus {
 			throw new NullPointerException("context must not be null");
 		}
 		final TrolleyBus bus = TrolleyBusDepot.get(activity).create(activity);
-		bus.subscribeFor(new ObjectEvents(activity));
+		bus.subscribeFor(new TrolleyBus.ObjectEvents(activity));
 		return bus;
 	}
 	
@@ -50,16 +78,22 @@ public class TinyBus implements Bus {
 		return TrolleyBusDepot.get(activity).getBus(activity);
 	}
 	
-	//-- implementation
+	
+	
+	
+	//-- static members
 	
 	// set it to true, if you want the bus to check whether it is called from the main thread 
 	private static final boolean ASSERT_ACCESS = false;
+	
 	private static final int QUEUE_SIZE = 12;
 	private static final AccessAssertion MAIN_THREAD_CHECKER = new MainThreadAssertion();
 	
 	// cached objects meta data
 	private static final HashMap<Class<?> /*receivers or producer*/, ObjectMeta> 
 		OBJECTS_META = new HashMap<Class<?>, ObjectMeta>();
+	
+	//-- fields
 	
 	private final HashMap<Class<?>/*event class*/, HashSet<Object>/*multiple receiver objects*/>
 		mEventReceivers = new HashMap<Class<?>, HashSet<Object>>();
@@ -73,6 +107,8 @@ public class TinyBus implements Bus {
 	private Task tail;
 	private boolean mProcessing;
 	
+	//-- public api
+
 	public TinyBus() {
 		this(MAIN_THREAD_CHECKER);
 	}
