@@ -22,8 +22,8 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		
 		mBus = TinyBus.create(this)
-			.subscribeFor(new ConnectivityEvents())
-			.subscribeFor(new BatteryEvents());
+			.wire(new ConnectivityEvents())
+			.wire(new BatteryEvents());
 		
 	}
 
@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
 	@Subscribe
 	public void onConnectivityEvent(ConnectionChangedEvent event) {
 		if (event.isConnected()) {
-			// connected
+			// check type
 		}
 	}
 

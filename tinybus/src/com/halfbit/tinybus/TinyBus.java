@@ -65,21 +65,9 @@ public class TinyBus implements Bus {
 		return TrolleyBusDepot.get(activity).create(activity);
 	}
 	
-	public static TrolleyBus createAndWire(Activity activity) {
-		if (activity == null) {
-			throw new NullPointerException("context must not be null");
-		}
-		final TrolleyBus bus = TrolleyBusDepot.get(activity).create(activity);
-		bus.subscribeFor(new TrolleyBus.ObjectEvents(activity));
-		return bus;
-	}
-	
 	public static Bus from(Activity activity) {
 		return TrolleyBusDepot.get(activity).getBus(activity);
 	}
-	
-	
-	
 	
 	//-- static members
 	

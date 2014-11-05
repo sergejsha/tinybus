@@ -1,6 +1,5 @@
 package com.halfbit.tinybus;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import android.app.Activity;
@@ -16,12 +15,7 @@ public class TrolleyBus extends TinyBus {
 		protected abstract void onStopped(Context context);
 	}	
 	
-	public TrolleyBus wire(Object object) {
-		subscribeFor(new ObjectEvents(object));
-		return this;
-	}
-	
-	public TrolleyBus subscribeFor(Events events) {
+	public TrolleyBus wire(Events events) {
 		if (mEvents == null) {
 			mEvents = new ArrayList<Events>();
 		}
@@ -49,27 +43,5 @@ public class TrolleyBus extends TinyBus {
 			}
 		}
 	}
-	
-	static class ObjectEvents extends Events {
-
-		private final WeakReference<Object> mReference; 
-		
-		public ObjectEvents(Object object) {
-			mReference = new WeakReference<Object>(object);
-		}
-		
-		@Override
-		protected void onStarted(Context context) {
-			final Object object = mReference.get();
-			if (object != null) bus.register(object);
-		}
-
-		@Override
-		protected void onStopped(Context context) {
-			final Object object = mReference.get();
-			if (object != null) bus.unregister(object);
-		}
-
-	}	
 	
 }
