@@ -15,55 +15,39 @@
  */
 package com.halfbit.tinybus;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import com.halfbit.tinybus.TrolleyBus.ObjectEvents;
+
 import android.app.Activity;
-import android.content.Context;
 import android.os.Looper;
 
 public class TinyBus implements Bus {
 	
 	//-- static public methods
 
-	public static TinyBus create(Activity activity) {
+	public static TrolleyBus create(Activity activity) {
 		if (activity == null) {
 			throw new NullPointerException("context must not be null");
 		}
-		return BusDepot.get(activity).create(activity);
+		return TrolleyBusDepot.get(activity).create(activity);
 	}
 	
-	public static TinyBus createAndAttach(Activity activity) {
+	public static TrolleyBus createAndWire(Activity activity) {
 		if (activity == null) {
 			throw new NullPointerException("context must not be null");
 		}
-		final TinyBus bus = BusDepot.get(activity).create(activity);
+		final TrolleyBus bus = TrolleyBusDepot.get(activity).create(activity);
 		bus.subscribeFor(new ObjectEvents(activity));
 		return bus;
 	}
 	
-	public TinyBus attach(Object object) {
-		subscribeFor(new ObjectEvents(object));
-		return this;
-	}
-	
-	public TinyBus subscribeFor(Events events) {
-		if (mEvents == null) {
-			mEvents = new ArrayList<Events>();
-		}
-		mEvents.add(events);
-		events.bus = this;
-		return this;
-	}
-	
-	
-	public static TinyBus from(Activity activity) {
-		return BusDepot.get(activity).getBus(activity);
+	public static Bus from(Activity activity) {
+		return TrolleyBusDepot.get(activity).getBus(activity);
 	}
 	
 	//-- implementation
@@ -511,49 +495,5 @@ public class TinyBus implements Bus {
             return false;
         }
     }
-	
-    //-- dynamic producers
-    
-	private ArrayList<Events> mEvents;
-
-	void dispatchOnStart(Activity activity) {
-		if (mEvents != null) {
-			for (Events producer : mEvents) {
-				//register(producer);
-				producer.onStarted(activity);
-			}
-		}
-	}
-	
-	void dispatchOnStop(Activity activity) {
-		if (mEvents != null) {
-			for (Events producer : mEvents) {
-				//unregister(producer);
-				producer.onStopped(activity);
-			}
-		}
-	}
-	
-	static class ObjectEvents extends Events {
-
-		private final WeakReference<Object> mReference; 
-		
-		public ObjectEvents(Object object) {
-			mReference = new WeakReference<Object>(object);
-		}
-		
-		@Override
-		protected void onStarted(Context context) {
-			final Object object = mReference.get();
-			if (object != null) bus.register(object);
-		}
-
-		@Override
-		protected void onStopped(Context context) {
-			final Object object = mReference.get();
-			if (object != null) bus.unregister(object);
-		}
-
-	}
 	
 }

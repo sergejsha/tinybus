@@ -9,8 +9,8 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 
-import com.halfbit.tinybus.Events;
 import com.halfbit.tinybus.Produce;
+import com.halfbit.tinybus.TrolleyBus.Events;
 
 public class ConnectivityEvents extends Events {
 
