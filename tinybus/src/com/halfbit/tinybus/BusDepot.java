@@ -31,11 +31,24 @@ class BusDepot implements ActivityLifecycleCallbacks {
 		app.registerActivityLifecycleCallbacks(this);
 	}
 
-	public TinyBus getBus(Context context) {
+	public TinyBus create(Context context) {
 		TinyBus bus = mBuses.get(context);
+		if (bus != null) {
+			throw new IllegalArgumentException("Bus has already been created with the context. "
+					+ "Use TinyBus.from(Context) method to access created bus instance. "
+					+ "Context: " + context);
+		}
+		bus = new TinyBus();
+		mBuses.put(context, bus);
+		return bus;
+	}
+	
+	public TinyBus getBus(Context context) {
+		final TinyBus bus = mBuses.get(context);
 		if (bus == null) {
-			bus = new TinyBus();
-			mBuses.put(context, bus);
+			throw new IllegalArgumentException("Bus has not yet been created in the context. "
+					+ "Use TinyBus.create(Context) method inside Activity.onCreate() method "
+					+ "to create bus instance first. Context: " + context);
 		}
 		return bus;
 	}
@@ -68,6 +81,5 @@ class BusDepot implements ActivityLifecycleCallbacks {
 	@Override public void onActivityResumed(Activity activity) { }
 	@Override public void onActivityPaused(Activity activity) { }
 	@Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
-	
-	
+
 }
