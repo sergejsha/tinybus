@@ -94,13 +94,13 @@ public class BatteryEvents extends Events {
 	}
 	
 	@Override
-	protected void onStarted(Context context) {
+	protected void onStart(Context context) {
 		bus.register(this);
 		context.registerReceiver(mReceiver, mFilter);
 	}
 
 	@Override
-	protected void onStopped(Context context) {
+	protected void onStop(Context context) {
 		bus.unregister(this);
 		context.unregisterReceiver(mReceiver);
 		mBatteryLevelEvent = null;

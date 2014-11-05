@@ -11,8 +11,8 @@ public class TrolleyBus extends TinyBus {
 	
 	public static abstract class Events {
 		protected Bus bus;
-		protected abstract void onStarted(Context context);
-		protected abstract void onStopped(Context context);
+		protected abstract void onStart(Context context);
+		protected abstract void onStop(Context context);
 	}	
 	
 	public TrolleyBus wire(Events events) {
@@ -31,7 +31,7 @@ public class TrolleyBus extends TinyBus {
 	void dispatchOnStart(Activity activity) {
 		if (mEvents != null) {
 			for (Events producer : mEvents) {
-				producer.onStarted(activity);
+				producer.onStart(activity);
 			}
 		}
 	}
@@ -39,7 +39,7 @@ public class TrolleyBus extends TinyBus {
 	void dispatchOnStop(Activity activity) {
 		if (mEvents != null) {
 			for (Events producer : mEvents) {
-				producer.onStopped(activity);
+				producer.onStop(activity);
 			}
 		}
 	}

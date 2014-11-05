@@ -115,7 +115,7 @@ public class ConnectivityEvents extends Events {
 	}
 	
 	@Override
-	protected void onStarted(Context context) {
+	protected void onStart(Context context) {
 		if (mConnectivityManager == null) {
 			mConnectivityManager = (ConnectivityManager) 
 					context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -135,7 +135,7 @@ public class ConnectivityEvents extends Events {
 	}
 
 	@Override
-	protected void onStopped(Context context) {
+	protected void onStop(Context context) {
 		bus.unregister(this);
 		context.unregisterReceiver(mReceiver);
 		mConnectionChangedEvent = null;
