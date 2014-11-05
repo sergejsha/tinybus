@@ -16,51 +16,26 @@
 package com.halfbit.tinybus;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Looper;
 
 public class TinyBus implements Bus {
 	
-	/**
-	 * Use this method to get a bus instance available in current context. Do not forget to
-	 * implement {@link com.halfbit.tinybus.BusDepot} in your activity or application to make
-	 * this method working.
-	 * 
-	 * @see BusDepot
-	 * 
-	 * @param context
-	 * @return	event bus instance, never null
-	 */
-	public static Bus from(Context context) {
-		if (context instanceof BusDepot) {
-			return ((BusDepot)context).getBus();
-		} else {
-			context = context.getApplicationContext();
-			if (context instanceof BusDepot) {
-				return ((BusDepot)context).getBus();
-			}
-		}
-		throw new IllegalArgumentException("Make sure Activity or Application implements BusDepot interface.");
-	}
-
-	//-- static members
-	
 	// set it to true, if you want the bus to check whether it is called from the main thread 
 	private static final boolean ASSERT_ACCESS = false;
-	
 	private static final int QUEUE_SIZE = 12;
 	private static final AccessAssertion MAIN_THREAD_CHECKER = new MainThreadAssertion();
 	
 	// cached objects meta data
 	private static final HashMap<Class<?> /*receivers or producer*/, ObjectMeta> 
 		OBJECTS_META = new HashMap<Class<?>, ObjectMeta>();
-	
-	//-- fields
 	
 	private final HashMap<Class<?>/*event class*/, HashSet<Object>/*multiple receiver objects*/>
 		mEventReceivers = new HashMap<Class<?>, HashSet<Object>>();
@@ -76,6 +51,20 @@ public class TinyBus implements Bus {
 	
 	//-- public api
 
+	public static TinyBus from(Context context) {
+		if (context == null) throw new NullPointerException("context must not be null");
+		return BusDepot.get(context).getBus(context);
+	}
+	
+	public TinyBus with(DynamicProducer producer) {
+		if (dynamicProducers == null) {
+			dynamicProducers = new ArrayList<DynamicProducer>();
+		}
+		dynamicProducers.add(producer);
+		producer.bus = this;
+		return this;
+	}
+	
 	public TinyBus() {
 		this(MAIN_THREAD_CHECKER);
 	}
@@ -498,5 +487,29 @@ public class TinyBus implements Bus {
             return false;
         }
     }
+	
+    //-- dynamic producers
+    
+	private ArrayList<DynamicProducer> dynamicProducers;
+
+	void dispatchOnStart(Activity activity) {
+		if (dynamicProducers != null) {
+			for (DynamicProducer producer : dynamicProducers) {
+				register(producer);
+				producer.onStart(activity);
+				producer.isStarted = true;
+			}
+		}
+	}
+	
+	void dispatchOnStop(Activity activity) {
+		if (dynamicProducers != null) {
+			for (DynamicProducer producer : dynamicProducers) {
+				unregister(producer);
+				producer.onStop(activity);
+				producer.isStarted = false;
+			}
+		}
+	}
 	
 }

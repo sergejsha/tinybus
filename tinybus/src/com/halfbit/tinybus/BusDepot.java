@@ -1,34 +1,73 @@
-/*
- * Copyright (C) 2014 Sergej Shafarenka, halfbit.de
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.halfbit.tinybus;
 
-/**
- * Implement this interface to provide an instance of {@link com.halfbit.tinybus.Bus}.
- * 
- * <p>If you want a global bus instance, then let {@link android.app.Application} to 
- * implement this interface. In case you want to have a separate bus per 
- * {@link android.app.Activity}, then implement this interface in your activity.
- *   
- * @author Sergej Shafarenka
- */
-public interface BusDepot {
+import java.util.WeakHashMap;
+
+import android.app.Activity;
+import android.app.Application;
+import android.app.Application.ActivityLifecycleCallbacks;
+import android.content.Context;
+import android.os.Bundle;
+import android.util.Log;
+
+class BusDepot implements ActivityLifecycleCallbacks {
+
+	private static final String TAG = BusDepot.class.getSimpleName();
+	private static final boolean DEBUG = true;
 	
-	/**
-	 * @return instance of bus
-	 */
-	Bus getBus();
+	private static BusDepot INSTANCE;
+	
+	public static BusDepot get(Context context) {
+		if (INSTANCE == null) {
+			INSTANCE = new BusDepot(context);
+		}
+		return INSTANCE;
+	}
+
+	private final WeakHashMap<Context, TinyBus> mBuses;
+	
+	public BusDepot(Context context) {
+		mBuses = new WeakHashMap<Context, TinyBus>();
+		final Application app = (Application) context.getApplicationContext();
+		app.registerActivityLifecycleCallbacks(this);
+	}
+
+	public TinyBus getBus(Context context) {
+		TinyBus bus = mBuses.get(context);
+		if (bus == null) {
+			bus = new TinyBus();
+			mBuses.put(context, bus);
+		}
+		return bus;
+	}
+	
+	@Override
+	public void onActivityStarted(Activity activity) {
+		TinyBus bus = mBuses.get(activity);
+		if (bus != null) {
+			bus.dispatchOnStart(activity);
+		}
+		if (DEBUG) Log.d(TAG, " #### STARTED, bus count: " + mBuses.size());
+	}
+	
+	@Override
+	public void onActivityStopped(Activity activity) {
+		TinyBus bus = mBuses.get(activity);
+		if (bus != null) {
+			bus.dispatchOnStop(activity);
+		}
+		if (DEBUG) Log.d(TAG, " #### STOPPED, bus count: " + mBuses.size());
+	}
+	
+	@Override
+	public void onActivityDestroyed(Activity activity) {
+		mBuses.remove(activity);
+		if (DEBUG) Log.d(TAG, " #### DESTROYED, bus count: " + mBuses.size());
+	}
+	
+	@Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) { }
+	@Override public void onActivityResumed(Activity activity) { }
+	@Override public void onActivityPaused(Activity activity) { }
+	@Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) { }
+	
 	
 }
