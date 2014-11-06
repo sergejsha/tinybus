@@ -1,0 +1,39 @@
+apply plugin: 'android'
+
+repositories {
+	flatDir {
+		dir 'libs'
+	}
+}
+
+dependencies {
+	compile project(':tinybus')
+	compile fileTree('libs')
+}
+
+
+android {
+	compileSdkVersion 'android-20'
+	buildToolsVersion '20.0.0'
+
+	defaultConfig {
+		minSdkVersion 10
+		targetSdkVersion 20
+	}
+
+	sourceSets {
+		main {
+			manifest.srcFile 'AndroidManifest.xml'
+			java.srcDirs = ['src']
+		}
+		instrumentTest.java.srcDirs = ['src']
+	}
+
+	lintOptions {
+		quiet true
+		abortOnError false
+		ignoreWarnings true
+		checkAllWarnings false
+		warningsAsErrors false
+	}
+}
