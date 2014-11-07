@@ -37,11 +37,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Subscribe {
 	
-	public static enum ThreadMode {
-		MainThread,
-		BackgroundThread
+	public static enum Mode {
+		Main,
+		Background
 	}	
 	
-	public ThreadMode value() default ThreadMode.MainThread;
+	public Mode value() default Mode.Main;
 	
 }

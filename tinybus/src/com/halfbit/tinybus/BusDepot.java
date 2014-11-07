@@ -22,8 +22,14 @@ package com.halfbit.tinybus;
  * implement this interface. In case you want to have a separate bus per 
  * {@link android.app.Activity}, then implement this interface in your activity.
  *   
+ * <p>Note: This interface is deprecated and will be removed in version 2. Instead of 
+ * implementing it just use TinyBus.create(Application) or TinyBus.create(Activity) 
+ * methods. For getting created Bus instance use TinyBus.from(Context) method as before.
+ * 
  * @author Sergej Shafarenka
  */
+
+@Deprecated
 public interface BusDepot {
 	
 	/**

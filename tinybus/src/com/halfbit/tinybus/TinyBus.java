@@ -25,7 +25,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.halfbit.tinybus.ObjectMeta.EventCallback;
-import com.halfbit.tinybus.Subscribe.ThreadMode;
+import com.halfbit.tinybus.Subscribe.Mode;
 
 public class TinyBus implements Bus {
 	
@@ -38,41 +38,22 @@ public class TinyBus implements Bus {
 	}	
 	
 	/**
-	 * Use this method to get a bus instance available in current context. Do not forget to
-	 * implement {@link com.halfbit.tinybus.BusDepot} in your activity or application to make
-	 * this method working.
+	 * Use this method to get a bus instance available in current context. 
 	 * 
-	 * @see BusDepot
+	 * TODO add more details 
 	 * 
 	 * @param context
 	 * @return	event bus instance, never null
 	 */
 	public static Bus from(Context context) {
-		
-		Bus bus = null;
-		
-		if (context instanceof Activity) {
-			bus = TinyBusDepot.get(context).getBus((Activity) context);
-			if (bus != null) return bus;
-		}
-
-		if (context instanceof BusDepot) {
-			return ((BusDepot) context).getBus();
-		} else {
-			context = context.getApplicationContext();
-			if (context instanceof BusDepot) {
-				return ((BusDepot) context).getBus();
-			}
-		}
-		
-		throw new IllegalArgumentException("Make sure Activity or Application implements BusDepot interface.");
+		return TinyBusDepot.get(context).from(context);
 	}
-
-	public static TinyBus create(Activity activity) {
-		if (activity == null) {
+	
+	public static TinyBus create(Context context) {
+		if (context == null) {
 			throw new NullPointerException("context must not be null");
 		}
-		return TinyBusDepot.get(activity).create(activity);
+		return TinyBusDepot.get(context).create(context);
 	}
 	
 	public TinyBus wire(Events events) {
@@ -248,7 +229,7 @@ public class TinyBus implements Bus {
 	void dispatchEvent(EventCallback eventCallback, Object receiver, 
 			Object event) throws Exception {
 		
-		if (eventCallback.mode == ThreadMode.BackgroundThread) {
+		if (eventCallback.dispatchThread == Mode.Background) {
 			if (mBackgroundDispatcher == null) {
 				throw new IllegalStateException("To enable multithreaded dispatching "
 						+ "you have to create bus using TinyBus(Context) constructor.");

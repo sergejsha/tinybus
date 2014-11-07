@@ -23,19 +23,19 @@ class TinyBusDepot implements ActivityLifecycleCallbacks {
 		return INSTANCE;
 	}
 
-	private final WeakHashMap<Activity, TinyBus> mBuses;
+	private final WeakHashMap<Context, TinyBus> mBuses;
 	private BackgroundDispatcher mBackgroundDispatcher;
 	
 	public TinyBusDepot(Context context) {
-		mBuses = new WeakHashMap<Activity, TinyBus>();
+		mBuses = new WeakHashMap<Context, TinyBus>();
 		final Application app = (Application) context.getApplicationContext();
 		app.registerActivityLifecycleCallbacks(this);
 	}
 
-	public TinyBus create(Activity context) {
+	public TinyBus create(Context context) {
 		TinyBus bus = mBuses.get(context);
 		if (bus != null) {
-			throw new IllegalArgumentException("Bus has already been created with the context. "
+			throw new IllegalArgumentException("Bus has already been created for given context. "
 					+ "Use TinyBus.from(Context) method to access created bus instance. "
 					+ "Context: " + context);
 		}
@@ -44,12 +44,13 @@ class TinyBusDepot implements ActivityLifecycleCallbacks {
 		return bus;
 	}
 	
-	public TinyBus getBus(Activity context) {
+	public TinyBus from(Context context) {
 		final TinyBus bus = mBuses.get(context);
 		if (bus == null) {
 			throw new IllegalArgumentException("Bus has not yet been created in the context. "
-					+ "Use TinyBus.create(Context) method inside Activity.onCreate() method "
-					+ "to create bus instance first. Context: " + context);
+					+ "Use TinyBus.create(Context) method inside Activity.onCreate() or "
+					+ "Application.onCreate() to create bus instance attached to activity "
+					+ "or applicaiton. Context: " + context);
 		}
 		return bus;
 	}

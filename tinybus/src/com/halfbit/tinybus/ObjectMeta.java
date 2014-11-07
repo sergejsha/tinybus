@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import com.halfbit.tinybus.Subscribe.ThreadMode;
+import com.halfbit.tinybus.Subscribe.Mode;
 
 class ObjectMeta {
 
@@ -16,11 +16,11 @@ class ObjectMeta {
 		
 		public EventCallback(Method method, Subscribe ann) {
 			this.method = method;
-			this.mode = ann.value();
+			this.dispatchThread = ann.value();
 		}
 		
 		public final Method method;
-		public final ThreadMode mode;
+		public final Mode dispatchThread;
 		
 	}
 	

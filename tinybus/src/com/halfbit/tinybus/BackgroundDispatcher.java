@@ -33,7 +33,6 @@ class BackgroundDispatcher implements Runnable {
 		
 		Task task;
 		while (true) {
-			
 			synchronized (mTaskQueue) {
 				task = mTaskQueue.poll();
 			}
@@ -52,12 +51,9 @@ class BackgroundDispatcher implements Runnable {
 					task.dispatchInBackground();
 				} catch (Exception e) {
 					throw new RuntimeException(e);
-					// TODO or should we continue here?
 				}
 			}
-			
 		}
-		
 	}
 	
 }
