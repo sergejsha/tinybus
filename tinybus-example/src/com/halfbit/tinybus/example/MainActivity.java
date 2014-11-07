@@ -19,12 +19,14 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
 		
+		// Create a bus and attach it to activity
 		mBus = TinyBus.create(this)
 			.wire(new ConnectivityEvents())
 			.wire(new BatteryEvents());
 		
+		// create fragments
+		setContentView(R.layout.activity_main);
 	}
 
 	@Override

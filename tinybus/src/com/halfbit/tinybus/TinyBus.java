@@ -15,6 +15,7 @@
  */
 package com.halfbit.tinybus;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -279,7 +280,7 @@ public class TinyBus implements Bus {
 		
 		// runnable dispatch
 		public EventCallback eventCallback;
-		public Object receiver;
+		public WeakReference<Object> receiverRef;
 		public Object event;
 		
 		private Task() {}
@@ -328,7 +329,7 @@ public class TinyBus implements Bus {
 		public Task setupDispatchEventHandler(EventCallback eventCallback, 
 				Object receiver, Object event) {
 			this.eventCallback = eventCallback;
-			this.receiver = receiver;
+			this.receiverRef = new WeakReference<Object>(receiver);
 			this.event = event;
 			return this;
 		}
@@ -338,10 +339,14 @@ public class TinyBus implements Bus {
 				throw new IllegalStateException("Assertion. Expected task " 
 						+ RUNNABLE_DISPATCH_BACKGROUND_EVENT + " while received " + code);
 			}
-			eventCallback.method.invoke(receiver, event);
+			
+			final Object receiver = this.receiverRef.get();
+			if (receiver != null) {
+				eventCallback.method.invoke(receiver, event);
+			}
 			
 			eventCallback = null;
-			receiver = null;
+			receiverRef = null;
 			event = null;
 		}
 		
