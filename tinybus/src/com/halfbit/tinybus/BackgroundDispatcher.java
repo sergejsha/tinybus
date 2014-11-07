@@ -17,7 +17,8 @@ class BackgroundDispatcher implements Runnable {
 		mBackgroundThread.start();
 	}
 	
-	public void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception {
+	public void dispatchEvent(EventCallback eventCallback, 
+			Object receiver, Object event) throws Exception {
 		final Task task = Task.obtainTask(null, Task.RUNNABLE_DISPATCH_BACKGROUND_EVENT)
 				.setupDispatchEventHandler(eventCallback, receiver, event);
 		

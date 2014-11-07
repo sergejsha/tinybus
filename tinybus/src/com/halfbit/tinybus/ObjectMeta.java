@@ -16,11 +16,11 @@ class ObjectMeta {
 		
 		public EventCallback(Method method, Subscribe ann) {
 			this.method = method;
-			this.dispatchThread = ann.value();
+			this.mode = ann.value();
 		}
 		
 		public final Method method;
-		public final Mode dispatchThread;
+		public final Mode mode;
 		
 	}
 	

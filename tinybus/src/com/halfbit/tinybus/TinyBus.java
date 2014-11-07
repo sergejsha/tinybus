@@ -230,7 +230,7 @@ public class TinyBus implements Bus {
 	void dispatchEvent(EventCallback eventCallback, Object receiver, 
 			Object event) throws Exception {
 		
-		if (eventCallback.dispatchThread == Mode.Background) {
+		if (eventCallback.mode == Mode.Background) {
 			if (mBackgroundDispatcher == null) {
 				throw new IllegalStateException("To enable multithreaded dispatching "
 						+ "you have to create bus using TinyBus(Context) constructor.");
@@ -281,7 +281,6 @@ public class TinyBus implements Bus {
 		// runnable dispatch
 		public EventCallback eventCallback;
 		public WeakReference<Object> receiverRef;
-		public Object event;
 		
 		private Task() {}
 		
@@ -293,7 +292,6 @@ public class TinyBus implements Bus {
 			if (task == null) task = new Task();
 			task.code = code;
 			task.obj = obj;
-			task.bus = null;
 			task.prev = null;
 			return task;
 		}
@@ -320,17 +318,15 @@ public class TinyBus implements Bus {
 			code = CODE_POST_EVENT;
 			bus.mTaskQueue.offer(this);
 			bus.processQueue();
-			
 			bus = null;
 		}
 		
 		//-- handling dispatch event
 		
-		public Task setupDispatchEventHandler(EventCallback eventCallback, 
-				Object receiver, Object event) {
+		public Task setupDispatchEventHandler(EventCallback eventCallback, Object receiver, Object event) {
 			this.eventCallback = eventCallback;
 			this.receiverRef = new WeakReference<Object>(receiver);
-			this.event = event;
+			this.obj = event;
 			return this;
 		}
 		
@@ -342,12 +338,12 @@ public class TinyBus implements Bus {
 			
 			final Object receiver = this.receiverRef.get();
 			if (receiver != null) {
-				eventCallback.method.invoke(receiver, event);
+				eventCallback.method.invoke(receiver, obj);
 			}
 			
 			eventCallback = null;
 			receiverRef = null;
-			event = null;
+			obj = null;
 		}
 		
 	}
