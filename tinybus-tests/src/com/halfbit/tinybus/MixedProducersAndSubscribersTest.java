@@ -18,7 +18,7 @@ public class MixedProducersAndSubscribersTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
+		bus = new TinyBus();
 		subscriber2 = new Subscriber2();
 		producer1 = new Producer1();
 		producer3 = new Producer3();

@@ -14,7 +14,7 @@ public class FailFastTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
+		bus = new TinyBus();
 		subscriber = new Subscriber1();
 		producer = new Producer1();
 	}

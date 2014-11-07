@@ -55,7 +55,7 @@ public class TinyBusPerformanceTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
-		mTinyBus = new TinyBus(new TinyBus.SingleThreadAssertion());
+		mTinyBus = new TinyBus();
 		mEventBus = new EventBus();
 		mOttoBus = new com.squareup.otto.Bus(new com.squareup.otto.ThreadEnforcer() {
 			public void enforce(com.squareup.otto.Bus bus) {}

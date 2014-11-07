@@ -9,42 +9,43 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
-class TrolleyBusDepot implements ActivityLifecycleCallbacks {
+class TinyBusDepot implements ActivityLifecycleCallbacks {
 
-	private static final String TAG = TrolleyBusDepot.class.getSimpleName();
+	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	private static final boolean DEBUG = false;
 	
-	private static TrolleyBusDepot INSTANCE;
+	private static TinyBusDepot INSTANCE;
 	
-	public static TrolleyBusDepot get(Context context) {
+	public static TinyBusDepot get(Context context) {
 		if (INSTANCE == null) {
-			INSTANCE = new TrolleyBusDepot(context);
+			INSTANCE = new TinyBusDepot(context);
 		}
 		return INSTANCE;
 	}
 
-	private final WeakHashMap<Activity, TrolleyBus> mBuses;
+	private final WeakHashMap<Activity, TinyBus> mBuses;
+	private BackgroundDispatcher mBackgroundDispatcher;
 	
-	public TrolleyBusDepot(Context context) {
-		mBuses = new WeakHashMap<Activity, TrolleyBus>();
+	public TinyBusDepot(Context context) {
+		mBuses = new WeakHashMap<Activity, TinyBus>();
 		final Application app = (Application) context.getApplicationContext();
 		app.registerActivityLifecycleCallbacks(this);
 	}
 
-	public TrolleyBus create(Activity context) {
-		TrolleyBus bus = mBuses.get(context);
+	public TinyBus create(Activity context) {
+		TinyBus bus = mBuses.get(context);
 		if (bus != null) {
 			throw new IllegalArgumentException("Bus has already been created with the context. "
 					+ "Use TinyBus.from(Context) method to access created bus instance. "
 					+ "Context: " + context);
 		}
-		bus = new TrolleyBus();
+		bus = new TinyBus(context);
 		mBuses.put(context, bus);
 		return bus;
 	}
 	
-	public TrolleyBus getBus(Activity context) {
-		final TrolleyBus bus = mBuses.get(context);
+	public TinyBus getBus(Activity context) {
+		final TinyBus bus = mBuses.get(context);
 		if (bus == null) {
 			throw new IllegalArgumentException("Bus has not yet been created in the context. "
 					+ "Use TinyBus.create(Context) method inside Activity.onCreate() method "
@@ -53,9 +54,16 @@ class TrolleyBusDepot implements ActivityLifecycleCallbacks {
 		return bus;
 	}
 	
+	synchronized BackgroundDispatcher getBackgroundDispatcher() {
+		if (mBackgroundDispatcher == null) {
+			mBackgroundDispatcher = new BackgroundDispatcher();
+		}
+		return mBackgroundDispatcher;
+	}
+	
 	@Override
 	public void onActivityStarted(Activity activity) {
-		TrolleyBus bus = mBuses.get(activity);
+		TinyBus bus = mBuses.get(activity);
 		if (bus != null) {
 			bus.dispatchOnStart(activity);
 		}
@@ -64,7 +72,7 @@ class TrolleyBusDepot implements ActivityLifecycleCallbacks {
 	
 	@Override
 	public void onActivityStopped(Activity activity) {
-		TrolleyBus bus = mBuses.get(activity);
+		TinyBus bus = mBuses.get(activity);
 		if (bus != null) {
 			bus.dispatchOnStop(activity);
 		}

@@ -3,6 +3,9 @@ package com.halfbit.tinybus;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
+import android.os.Looper;
+import android.test.InstrumentationTestCase;
+import android.test.UiThreadTest;
 
 import com.halfbit.tinybus.mocks.Event1;
 import com.halfbit.tinybus.mocks.Producer1;
@@ -17,7 +20,7 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
+		bus = new TinyBus();
 		subscriber = new Subscriber1();
 		producer = new Producer1();
 	}
@@ -95,6 +98,10 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 	}
 	
 	public void testPostEventWithProducer() {
+		
+		System.out.println("Current: " + Thread.currentThread());
+		System.out.println("Looper: " + Looper.getMainLooper().getThread());
+		
 		bus.register(producer);
 		bus.register(subscriber);
 		

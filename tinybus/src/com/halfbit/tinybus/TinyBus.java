@@ -15,17 +15,27 @@
  */
 package com.halfbit.tinybus;
 
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Handler;
 import android.os.Looper;
 
+import com.halfbit.tinybus.ObjectMeta.EventCallback;
+import com.halfbit.tinybus.Subscribe.ThreadMode;
+
 public class TinyBus implements Bus {
+	
+	//-- public classes and methods
+	
+	public static abstract class Events {
+		protected Bus bus;
+		protected abstract void onStart(Context context);
+		protected abstract void onStop(Context context);
+	}	
 	
 	/**
 	 * Use this method to get a bus instance available in current context. Do not forget to
@@ -42,7 +52,7 @@ public class TinyBus implements Bus {
 		Bus bus = null;
 		
 		if (context instanceof Activity) {
-			bus = TrolleyBusDepot.get(context).getBus((Activity) context);
+			bus = TinyBusDepot.get(context).getBus((Activity) context);
 			if (bus != null) return bus;
 		}
 
@@ -58,24 +68,25 @@ public class TinyBus implements Bus {
 		throw new IllegalArgumentException("Make sure Activity or Application implements BusDepot interface.");
 	}
 
-	public static TrolleyBus create(Activity activity) {
+	public static TinyBus create(Activity activity) {
 		if (activity == null) {
 			throw new NullPointerException("context must not be null");
 		}
-		return TrolleyBusDepot.get(activity).create(activity);
+		return TinyBusDepot.get(activity).create(activity);
 	}
 	
-	public static Bus from(Activity activity) {
-		return TrolleyBusDepot.get(activity).getBus(activity);
+	public TinyBus wire(Events events) {
+		if (mEvents == null) {
+			mEvents = new ArrayList<Events>();
+		}
+		mEvents.add(events);
+		events.bus = this;
+		return this;
 	}
 	
 	//-- static members
 	
-	// set it to true, if you want the bus to check whether it is called from the main thread 
-	private static final boolean ASSERT_ACCESS = false;
-	
 	private static final int QUEUE_SIZE = 12;
-	private static final AccessAssertion MAIN_THREAD_CHECKER = new MainThreadAssertion();
 	
 	// cached objects meta data
 	private static final HashMap<Class<?> /*receivers or producer*/, ObjectMeta> 
@@ -89,32 +100,38 @@ public class TinyBus implements Bus {
 	private final HashMap<Class<?>/*event class*/, Object/*single producer objects*/>
 		mEventProducers = new HashMap<Class<?>, Object>(); 
 	
-	private final AccessAssertion mAccessAssertion;
+	private final TaskQueue mTaskQueue;
+	private final Handler mWorkerHandler;
+	private final Thread mWorkerThread;
+	private final BackgroundDispatcher mBackgroundDispatcher;
 	
-	private Task head;
-	private Task tail;
+	private ArrayList<Events> mEvents;
 	private boolean mProcessing;
 	
 	//-- public api
 
 	public TinyBus() {
-		this(MAIN_THREAD_CHECKER);
+		this(null);
 	}
 	
-	TinyBus(AccessAssertion checker) {
-		mAccessAssertion = checker;
+	public TinyBus(Context context) {
+		mTaskQueue = new TaskQueue();
+		mWorkerThread = Thread.currentThread();
+		final Looper looper = Looper.myLooper();
+		mWorkerHandler = looper == null ? null : new Handler(looper);
+		mBackgroundDispatcher = context == null ? null : TinyBusDepot.get(context).getBackgroundDispatcher();
 	}
 	
 	@Override
 	public void register(Object obj) {
 		if (obj == null) throw new NullPointerException("Object must not be null");
+		assertWorkerThread();
 		
 		if (mProcessing) {
-			offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
 			
 		} else {
-			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
-			offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
 			processQueue();
 		}
 	}
@@ -122,13 +139,13 @@ public class TinyBus implements Bus {
 	@Override
 	public void unregister(Object obj) {
 		if (obj == null) throw new NullPointerException("Object must not be null");
+		assertWorkerThread();
 		
 		if (mProcessing) {
-			offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
 			
 		} else {
-			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
-			offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
 			processQueue();
 		}
 	}
@@ -137,43 +154,43 @@ public class TinyBus implements Bus {
 	public void post(Object event) {
 		if (event == null) throw new NullPointerException("Event must not be null");
 		
-		if (mProcessing) {
-			offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
+		if (mWorkerThread == Thread.currentThread()) {
+			if (mProcessing) {
+				mTaskQueue.offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
+				
+			} else {
+				mTaskQueue.offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
+				processQueue();
+			}
 			
 		} else {
-			if (ASSERT_ACCESS) mAccessAssertion.assertAccess();
-			offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
-			processQueue();
+			if (mWorkerHandler != null) {
+				mWorkerHandler.post(Task.obtainTask(event, Task.RUNNABLE_REPOST_EVENT)
+						.setupRepostHandler(this));
+				
+			} else {
+				throw new IllegalStateException("You can only call post() from a different "
+						+ "thread, if the thread, in which TinyBus was created, had a Looper. "
+						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
+			}
+		}
+	}
+	
+	private void assertWorkerThread() {
+		if (mWorkerThread != Thread.currentThread()) {
+			throw new IllegalStateException("You must call this method from the same thread, "
+					+ "in which TinyBus was created. Created: " + mWorkerThread 
+					+ ", current thread: " + Thread.currentThread());
 		}
 	}
 	
 	//-- private methods
 	
-	private void offer(Task task) {
-		if (tail == null) {
-			tail = head = task;
-		} else {
-			tail.prev = task;
-			tail = task;
-		}
-	}
-	
-	private Task poll() {
-		if (head == null) {
-			return null;
-		} else {
-			Task task = head;
-			head = head.prev;
-			if (head == null) tail = null;
-			return task;
-		}
-	}
-	
 	private void processQueue() {
 		mProcessing = true;
 		Task task;
 		
-		while((task = poll()) != null) {
+		while((task = mTaskQueue.poll()) != null) {
 			switch (task.code) {
 				case Task.CODE_REGISTER: registerInternal(task.obj); break;
 				case Task.CODE_UNREGISTER: unregisterInternal(task.obj); break;
@@ -195,8 +212,8 @@ public class TinyBus implements Bus {
 		meta.registerAtReceivers(obj, mEventReceivers);
 		meta.registerAtProducers(obj, mEventProducers);
 		
-		meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META);
-		meta.dispatchEvents(mEventProducers, obj, OBJECTS_META);
+		meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
+		meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
 	}
 	
 	private void unregisterInternal(Object obj) {
@@ -210,22 +227,58 @@ public class TinyBus implements Bus {
 		final HashSet<Object> receivers = mEventReceivers.get(eventClass);
 		if (receivers != null) {
 			ObjectMeta meta;
-			Method callback;
+			EventCallback eventCallback;
 			try {
 				for (Object receiver : receivers) {
 					meta = OBJECTS_META.get(receiver.getClass());
-					callback = meta.getEventCallback(eventClass);
-					callback.invoke(receiver, event);
+					eventCallback = meta.getEventCallback(eventClass);
+					dispatchEvent(eventCallback, receiver, event);
 				}
 			} catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				}
 				throw new RuntimeException(e);
 			}
 		}
 	}
 	
-	//-- task class
+	//-- package methods
 	
-	private static class Task {
+	void dispatchEvent(EventCallback eventCallback, Object receiver, 
+			Object event) throws Exception {
+		
+		if (eventCallback.mode == ThreadMode.BackgroundThread) {
+			if (mBackgroundDispatcher == null) {
+				throw new IllegalStateException("To enable multithreaded dispatching "
+						+ "you have to create bus using TinyBus(Context) constructor.");
+			}
+			mBackgroundDispatcher.dispatchEvent(eventCallback, receiver, event);
+			
+		} else {
+			eventCallback.method.invoke(receiver, event);
+		}
+	}
+	
+	void dispatchOnStart(Activity activity) {
+		if (mEvents != null) {
+			for (Events producer : mEvents) {
+				producer.onStart(activity);
+			}
+		}
+	}
+	
+	void dispatchOnStop(Activity activity) {
+		if (mEvents != null) {
+			for (Events producer : mEvents) {
+				producer.onStop(activity);
+			}
+		}
+	}
+	
+	//-- inner classes
+	
+	static class Task implements Runnable {
 		
 		private static final SimplePool<Task> POOL = new SimplePool<Task>(QUEUE_SIZE);
 		
@@ -233,256 +286,122 @@ public class TinyBus implements Bus {
 		public static final int CODE_UNREGISTER = 1;
 		public static final int CODE_POST_EVENT = 2;
 		
-		public Task prev;
+		public static final int RUNNABLE_REPOST_EVENT = 10;
+		public static final int RUNNABLE_DISPATCH_BACKGROUND_EVENT = 11;
 		
+		public Task prev;
 		public int code;
 		public Object obj;
+		
+		// runnable repost
+		public TinyBus bus;
+		
+		// runnable dispatch
+		public EventCallback eventCallback;
+		public Object receiver;
+		public Object event;
 		
 		private Task() {}
 		
 		public static Task obtainTask(Object obj, int code) {
-			Task task = POOL.acquire();
+			Task task;
+			synchronized (POOL) {
+				task = POOL.acquire();
+			}
 			if (task == null) task = new Task();
 			task.code = code;
 			task.obj = obj;
+			task.bus = null;
 			task.prev = null;
 			return task;
 		}
 		
 		public void recycle() {
-			POOL.release(this);
+			synchronized (POOL) {
+				POOL.release(this);
+			}
 		}
-	}
-	
-	//-- access checkers
-	
-	static interface AccessAssertion {
-		void assertAccess();
-	}
-	
-	static class SingleThreadAssertion 
-			implements AccessAssertion {
 
-		private Thread mMasterThread;
+		//-- handling repost event
+		
+		public Task setupRepostHandler(TinyBus bus) {
+			this.bus = bus;
+			return this;
+		}
 		
 		@Override
-		public void assertAccess() {
-			if (mMasterThread == null) {
-				mMasterThread = Thread.currentThread();
-			} else if (mMasterThread != Thread.currentThread()) {
-				throw new IllegalStateException("TinyBus must be accessed from same thread in which it " 
-						+ "was accessed for the first time. Expected access thread :" 
-						+ mMasterThread + ", while accessed from : " + Thread.currentThread());
+		public void run() {
+			if (code != RUNNABLE_REPOST_EVENT) {
+				throw new IllegalStateException("Assertion. Expected task " 
+						+ RUNNABLE_REPOST_EVENT + " while received " + code);
 			}
-		}
-	}
-
-	static class MainThreadAssertion 
-			implements AccessAssertion {
-
-		@Override
-		public void assertAccess() {
-			if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-				throw new IllegalStateException("TinyBus must be accessed from MainThread, while assesed from : " 
-						+ Thread.currentThread());
-			}
-		}
-	}
-	
-	//-- private classes
-	
-	private static class ObjectMeta {
-
-		private HashMap<Class<? extends Object>/*event class*/, Method> mEventCallbacks
-			= new HashMap<Class<? extends Object>, Method>();
-
-		private HashMap<Class<? extends Object>/*event class*/, Method> mProducerCallbacks
-			= new HashMap<Class<? extends Object>, Method>();
-		
-		public ObjectMeta(Object obj) {
-			Class<? extends Object> clazz = obj.getClass();
-			Method[] methods = clazz.getMethods();
+			code = CODE_POST_EVENT;
+			bus.mTaskQueue.offer(this);
+			bus.processQueue();
 			
-			Class<?>[] params;
-			Class<?> eventClass;
-			for (Method method : methods) {
-				if (method.isBridge()) continue;
-				
-				if (method.isAnnotationPresent(Subscribe.class)) {
-					params = method.getParameterTypes();
-					mEventCallbacks.put(params[0], method);
-					
-				} else if (method.isAnnotationPresent(Produce.class)) {
-					eventClass = method.getReturnType();
-					mProducerCallbacks.put(eventClass, method);
-				}
-			}
-		}
-
-		public Method getEventCallback(Class<?> eventClass) {
-			return mEventCallbacks.get(eventClass);
-		}
-
-		public void dispatchEvents(
-				Object obj,
-				HashMap<Class<? extends Object>, HashSet<Object>> receivers,
-				HashMap<Class<? extends Object>, ObjectMeta> metas) {
-			
-			Iterator<Entry<Class<? extends Object>, Method>> 
-				producerCallbacks = mProducerCallbacks.entrySet().iterator();
-
-			Object event;
-			ObjectMeta meta;
-			HashSet<Object> targetReceivers;
-			Class<? extends Object> eventClass;
-			Entry<Class<? extends Object>, Method> producerCallback;
-			
-			try {
-				while (producerCallbacks.hasNext()) {
-					producerCallback = producerCallbacks.next();
-					eventClass = producerCallback.getKey();
-					
-					targetReceivers = receivers.get(eventClass);
-					if (targetReceivers != null && targetReceivers.size() > 0) {
-						event = produceEvent(eventClass, obj);
-						if (event != null) {
-							for (Object receiver : targetReceivers) {
-								meta = metas.get(receiver.getClass());
-								meta.dispatchEventIfCallback(eventClass, event, receiver);
-							}
-						}
-					}
-				}
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			
-		}
-
-		public void dispatchEvents(
-				HashMap<Class<? extends Object>, Object> producers,
-				Object receiver,
-				HashMap<Class<? extends Object>, ObjectMeta> metas) {
-
-			Iterator<Class<? extends Object>> 
-				eventClasses = mEventCallbacks.keySet().iterator();
-			
-			Object event;
-			ObjectMeta meta;
-			Object producer;
-			Class<? extends Object> eventClass;
-			
-			try {
-				while (eventClasses.hasNext()) {
-					eventClass = eventClasses.next();
-					producer = producers.get(eventClass);
-					if (producer != null) {
-						meta = metas.get(producer.getClass());
-						event = meta.produceEvent(eventClass, producer);
-						if (event != null) {
-							dispatchEventIfCallback(eventClass, event, receiver);
-						}
-					}
-				}
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-
-		}
-
-		private Object produceEvent(Class<? extends Object> eventClass, 
-				Object producer) throws Exception {
-			return mProducerCallbacks.get(eventClass).invoke(producer);
-		}
-
-		public void dispatchEventIfCallback(Class<? extends Object> eventClass, 
-				Object event, Object receiver) throws Exception {
-			Method callback = mEventCallbacks.get(eventClass);
-			if (callback != null) {
-				callback.invoke(receiver, event);
-			}
+			bus = null;
 		}
 		
-		public void unregisterFromProducers(Object obj,
-				HashMap<Class<? extends Object>, Object>producers) {
-			
-			Class<? extends Object> key;
-			Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
-			while (keys.hasNext()) {
-				key = keys.next();
-				if (producers.remove(key) == null) {
-					throw new IllegalArgumentException(
-							"Unable to unregister producer, because it wasn't registered before, " + obj);
-				}
-			}
+		//-- handling dispatch event
+		
+		public Task setupDispatchEventHandler(EventCallback eventCallback, 
+				Object receiver, Object event) {
+			this.eventCallback = eventCallback;
+			this.receiver = receiver;
+			this.event = event;
+			return this;
 		}
-
-		public void registerAtProducers(Object obj,
-				HashMap<Class<? extends Object>, Object> producers) {
-
-			Class<? extends Object> key;
-			Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
-			while (keys.hasNext()) {
-				key = keys.next();
-				if (producers.put(key, obj) != null) {
-					throw new IllegalArgumentException(
-							"Unable to register producer, because another producer is already registered, " + obj);
-				}
+		
+		public void dispatchInBackground() throws Exception {
+			if (code != RUNNABLE_DISPATCH_BACKGROUND_EVENT) {
+				throw new IllegalStateException("Assertion. Expected task " 
+						+ RUNNABLE_DISPATCH_BACKGROUND_EVENT + " while received " + code);
 			}
+			eventCallback.method.invoke(receiver, event);
+			
+			eventCallback = null;
+			receiver = null;
+			event = null;
 		}
-
-		public void registerAtReceivers(Object obj,
-				HashMap<Class<? extends Object>, HashSet<Object>> receivers) {
-			
-			Iterator<Class<? extends Object>> keys = mEventCallbacks.keySet().iterator();
-			
-			Class<? extends Object> key;
-			HashSet<Object> eventReceivers;
-			
-			while (keys.hasNext()) {
-				key = keys.next();
-				eventReceivers = receivers.get(key);
-				if (eventReceivers == null) {
-					eventReceivers = new HashSet<Object>();
-					receivers.put(key, eventReceivers);
-				}
-				if (!eventReceivers.add(obj)) {
-					throw new IllegalArgumentException(
-							"Unable to registered receiver because it has already been registered: " + obj);
-				}
-			}
-		}
-
-		public void unregisterFromReceivers(Object obj,
-				HashMap<Class<? extends Object>, HashSet<Object>> receivers) {
-			Iterator<Class<? extends Object>> keys = mEventCallbacks.keySet().iterator();
-			
-			Class<? extends Object> key;
-			HashSet<Object> eventReceivers;
-			boolean fail = false;
-			while (keys.hasNext()) {
-				key = keys.next();
-				eventReceivers = receivers.get(key);
-				if (eventReceivers == null) {
-					fail = true;
-				} else {
-					fail = !eventReceivers.remove(obj);
-				}
-				if (fail) {
-					throw new IllegalArgumentException(
-							"Unregistering receiver which was not registered before: " + obj);
-				}
-			}
-		}
-	}	
-
+		
+	}
+	
+	/**
+	 * Singly linked list used as a FIFO queue.
+	 * @author sergej
+	 */
+    static class TaskQueue {
+    	private Task head;
+    	private Task tail;
+    	
+    	public void offer(Task task) {
+    		if (tail == null) {
+    			tail = head = task;
+    		} else {
+    			tail.prev = task;
+    			tail = task;
+    		}
+    	}
+    	
+    	public Task poll() {
+    		if (head == null) {
+    			return null;
+    		} else {
+    			Task task = head;
+    			head = head.prev;
+    			if (head == null) tail = null;
+    			return task;
+    		}
+    	}
+    }
+	
 	/**
 	 * Copyright (C) 2013 The Android Open Source Project
 	 * http://www.apache.org/licenses/LICENSE-2.0
 	 * 
 	 * Modified code from AOSP
 	 */
-    public static class SimplePool<T> {
+    static class SimplePool<T> {
         private final Object[] mPool;
         private int mPoolSize;
 
@@ -519,5 +438,5 @@ public class TinyBus implements Bus {
             return false;
         }
     }
-	
+    
 }

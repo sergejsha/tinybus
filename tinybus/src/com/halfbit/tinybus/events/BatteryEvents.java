@@ -7,7 +7,7 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 
 import com.halfbit.tinybus.Produce;
-import com.halfbit.tinybus.TrolleyBus.Events;
+import com.halfbit.tinybus.TinyBus.Events;
 
 public class BatteryEvents extends Events {
 

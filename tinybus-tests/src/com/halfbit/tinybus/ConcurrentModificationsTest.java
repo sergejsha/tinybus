@@ -73,7 +73,7 @@ public class ConcurrentModificationsTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		bus = new TinyBus(new TinyBus.SingleThreadAssertion());
+		bus = new TinyBus();
 		
 		subscriber1 = new Subscriber();
 		subscriber2 = new Subscriber();

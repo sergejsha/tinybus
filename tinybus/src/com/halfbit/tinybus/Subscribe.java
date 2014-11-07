@@ -31,8 +31,17 @@ import java.lang.annotation.Target;
  * Otto fails fast by throwing runtime exceptions in these cases.
  *
  * @author Cliff Biffle
+ * @author Sergej Shafarenka
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Subscribe {
+	
+	public static enum ThreadMode {
+		MainThread,
+		BackgroundThread
+	}	
+	
+	public ThreadMode value() default ThreadMode.MainThread;
+	
 }
