@@ -33,11 +33,11 @@ class ObjectMeta {
 		= new HashMap<Class<? extends Object>, Method>();
 	
 	public ObjectMeta(Object obj) {
-		Class<? extends Object> clazz = obj.getClass();
-		Method[] methods = clazz.getMethods();
+		final Method[] methods = obj.getClass().getMethods();
 		
 		Class<?>[] params;
 		Class<?> eventClass;
+		EventCallback callback;
 		Subscribe ann;
 		for (Method method : methods) {
 			if (method.isBridge()) continue;
@@ -45,7 +45,12 @@ class ObjectMeta {
 			ann = method.getAnnotation(Subscribe.class);
 			if (ann != null) {
 				params = method.getParameterTypes();
-				mEventCallbacks.put(params[0], new EventCallback(method, ann));
+				callback = mEventCallbacks.put(params[0], new EventCallback(method, ann));
+				if (callback != null) {
+					throw new IllegalArgumentException("Only one @Subscriber can be defined "
+							+ "per an event type in the same class. Event type: " 
+							+ params[0] + ". Class: " + obj.getClass());
+				}
 				
 			} else if (method.isAnnotationPresent(Produce.class)) {
 				eventClass = method.getReturnType();
@@ -84,7 +89,7 @@ class ObjectMeta {
 					if (event != null) {
 						for (Object receiver : targetReceivers) {
 							meta = metas.get(receiver.getClass());
-							meta.dispatchEventIfCallback(eventClass, event, receiver, bus);
+							meta.dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
 						}
 					}
 				}
@@ -117,7 +122,7 @@ class ObjectMeta {
 					meta = metas.get(producer.getClass());
 					event = meta.produceEvent(eventClass, producer);
 					if (event != null) {
-						dispatchEventIfCallback(eventClass, event, receiver, bus);
+						dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
 					}
 				}
 			}
@@ -132,7 +137,7 @@ class ObjectMeta {
 		return mProducerCallbacks.get(eventClass).invoke(producer);
 	}
 
-	public void dispatchEventIfCallback(Class<? extends Object> eventClass, 
+	public void dispatchEventIfCallbackExists(Class<? extends Object> eventClass, 
 			Object event, Object receiver, TinyBus bus) throws Exception {
 		EventCallback eventCallback = mEventCallbacks.get(eventClass);
 		if (eventCallback != null) {
@@ -144,7 +149,7 @@ class ObjectMeta {
 			HashMap<Class<? extends Object>, Object>producers) {
 		
 		Class<? extends Object> key;
-		Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
+		final Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
 		while (keys.hasNext()) {
 			key = keys.next();
 			if (producers.remove(key) == null) {
@@ -158,7 +163,7 @@ class ObjectMeta {
 			HashMap<Class<? extends Object>, Object> producers) {
 
 		Class<? extends Object> key;
-		Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
+		final Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
 		while (keys.hasNext()) {
 			key = keys.next();
 			if (producers.put(key, obj) != null) {
@@ -196,7 +201,7 @@ class ObjectMeta {
 		
 		Class<? extends Object> key;
 		HashSet<Object> eventReceivers;
-		boolean fail = false;
+		boolean fail;
 		while (keys.hasNext()) {
 			key = keys.next();
 			eventReceivers = receivers.get(key);

@@ -87,11 +87,14 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 	@UiThreadTest
 	public void testPostMainReceiveBackgroundWrongConstructor() {
 		
+		final CountDownLatch latch = new CountDownLatch(1);
+		
 		bus = new TinyBus();
 		bus.register(new Object() {
 			@Subscribe(Mode.Background)
 			public void onEvent(String event) {
 				stringResult = event;
+				latch.countDown();
 			}
 		});
 		
@@ -207,6 +210,91 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		
 		assertEquals(eventCount, callback.getEventsCount());
 		callback.assertEvents(sentEvents);
+		
+	}
+	
+	@UiThreadTest
+	public void testProduceIntoBackground() throws Throwable {
+		
+		final String producerEvent = "producer 1";
+		final String event1 = "event 1";
+		final Object event2 = new Object();
+		final String event3 = "event 3";
+
+		final CountDownLatch latch = new CountDownLatch(5);
+		final Callbacks callback1 = new Callbacks() {
+			
+			@Subscribe(Mode.Background)
+			public void onEvent(String event) {
+				onCallback(event);
+				latch.countDown();
+			}
+			
+			@Subscribe
+			public void onEvent(Object event) {
+				onCallback(event);
+				latch.countDown();
+			}
+		};
+
+		final Callbacks producer = new Callbacks() {
+			
+			@Produce
+			public String getProviderEvent() {
+				return producerEvent;
+			}
+			
+			@Subscribe
+			public void onEvent(Object event) {
+				onCallback(event);
+			}
+			
+		};
+		
+		bus = new TinyBus(getInstrumentation().getContext());
+		bus.register(callback1);
+		bus.post(event1);
+		bus.register(producer);
+		bus.post(event2);
+		bus.post(event3);
+		
+		bus.unregister(producer);
+		bus.register(producer);
+		
+		latch.await(3, TimeUnit.SECONDS);
+		
+		// because of async delivery we cannot guaranty event sequence
+		callback1.assertEventsAnyOrder(event1, producerEvent, event2, event3, producerEvent);
+		producer.assertEvents(event2);
+	}
+	
+	@UiThreadTest
+	public void testTwoSubscribersSameInstance() throws Throwable {
+		
+		final Callbacks subscriber = new Callbacks() {
+			
+			@Subscribe(Mode.Background)
+			public void onEventBackground(Event1 event) {
+				synchronized (this) {
+					onCallback(event);
+				}
+			}
+			
+			@Subscribe
+			public void onEventMain(Event1 event) {
+				synchronized (this) {
+					onCallback(event);
+				}
+			}
+		};
+		
+		bus = new TinyBus(getInstrumentation().getContext());
+		try {
+			bus.register(subscriber);
+			fail();
+		} catch (IllegalArgumentException e) {
+			// OK
+		}
 		
 	}
 	
