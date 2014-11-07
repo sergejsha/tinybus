@@ -51,6 +51,8 @@ class BackgroundDispatcher implements Runnable {
 					task.dispatchInBackground();
 				} catch (Exception e) {
 					throw new RuntimeException(e);
+				} finally {
+					task.recycle();
 				}
 			}
 		}
