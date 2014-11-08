@@ -36,7 +36,6 @@ class ObjectMeta {
 		final Method[] methods = obj.getClass().getMethods();
 		
 		Class<?>[] params;
-		Class<?> eventClass;
 		EventCallback callback;
 		Subscribe ann;
 		for (Method method : methods) {
@@ -53,8 +52,7 @@ class ObjectMeta {
 				}
 				
 			} else if (method.isAnnotationPresent(Produce.class)) {
-				eventClass = method.getReturnType();
-				mProducerCallbacks.put(eventClass, method);
+				mProducerCallbacks.put(method.getReturnType(), method);
 			}
 		}
 	}

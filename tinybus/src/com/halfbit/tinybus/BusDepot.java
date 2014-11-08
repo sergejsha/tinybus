@@ -23,8 +23,9 @@ package com.halfbit.tinybus;
  * {@link android.app.Activity}, then implement this interface in your activity.
  *   
  * <p>Note: This interface is deprecated and will be removed in version 2. Instead of 
- * implementing it just use TinyBus.create(Application) or TinyBus.create(Activity) 
- * methods. For getting created Bus instance use TinyBus.from(Context) method as before.
+ * implementing it just use TinyBus.from(Application) or TinyBus.from(Activity) 
+ * methods to get bus attached to the corresponding context. Instance of the bus will
+ * be created automatically.
  * 
  * @author Sergej Shafarenka
  */

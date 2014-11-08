@@ -10,9 +10,9 @@ import android.os.Build;
 import android.telephony.TelephonyManager;
 
 import com.halfbit.tinybus.Produce;
-import com.halfbit.tinybus.TinyBus.Events;
+import com.halfbit.tinybus.TinyBus.Wireable;
 
-public class ConnectivityEvents extends Events {
+public class ConnectivityEvents extends Wireable {
 
 	//-- public events
 	

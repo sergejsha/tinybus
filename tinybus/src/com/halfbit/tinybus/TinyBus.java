@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,9 +31,25 @@ import com.halfbit.tinybus.Subscribe.Mode;
 
 public class TinyBus implements Bus {
 	
-	//-- public classes and methods
-	
-	public static abstract class Events {
+	/**
+	 * You can {@link TinyBus#wire()} instances of this class to a bus.
+	 * Once wired, your <code>Wirable</code> will be started and stopped
+	 * depending on the context state. 
+	 * 
+	 * <p>
+	 * If the bus was created for an <i>Activity</i>, then all wired instances 
+	 * will be started and stopped when Activity starts and stops.
+	 * 
+	 * <p>
+	 * If context is <i>Application</i>, then all wired instance will be started
+	 * immediately after they became wired and won't be stopped afterwards.
+	 * 
+	 * <p>
+	 * <i>Service</i> context is not yet properly supported (TODO)
+	 * 
+	 * @author sergej
+	 */
+	public static abstract class Wireable {
 		protected Bus bus;
 		protected abstract void onStart(Context context);
 		protected abstract void onStop(Context context);
@@ -46,48 +63,38 @@ public class TinyBus implements Bus {
 	 * @param context
 	 * @return	event bus instance, never null
 	 */
-	public static Bus from(Context context) {
-		return TinyBusDepot.get(context).from(context);
-	}
-	
-	public static TinyBus create(Context context) {
-		if (context == null) {
-			throw new NullPointerException("context must not be null");
+	public static TinyBus from(Context context) {
+		final TinyBusDepot depot = TinyBusDepot.get(context);
+		TinyBus bus = depot.getBusInContext(context);
+		if (bus == null) {
+			bus = depot.createBusInContext(context);
 		}
-		return TinyBusDepot.get(context).create(context);
+		return bus;
 	}
 	
-	public TinyBus wire(Events events) {
-		if (mEvents == null) {
-			mEvents = new ArrayList<Events>();
-		}
-		mEvents.add(events);
-		events.bus = this;
-		return this;
-	}
-	
-	//-- static members
+	//-- implementation
 	
 	private static final int QUEUE_SIZE = 12;
 	
-	// cached objects meta data
-	private static final HashMap<Class<?> /*receivers or producer*/, ObjectMeta> 
-		OBJECTS_META = new HashMap<Class<?>, ObjectMeta>();
+	// callback's (receivers and/or producers) meta
+	private static final HashMap<Class<?>, ObjectMeta> OBJECTS_META 
+		= new HashMap<Class<?>, ObjectMeta>();
 	
-	//-- fields
+	// event class to receiver objects map 
+	private final HashMap<Class<?>, HashSet<Object>> mEventReceivers
+		= new HashMap<Class<?>, HashSet<Object>>();
 	
-	private final HashMap<Class<?>/*event class*/, HashSet<Object>/*multiple receiver objects*/>
-		mEventReceivers = new HashMap<Class<?>, HashSet<Object>>();
-	
-	private final HashMap<Class<?>/*event class*/, Object/*single producer objects*/>
-		mEventProducers = new HashMap<Class<?>, Object>(); 
+	// event class to producer object map
+	private final HashMap<Class<?>, Object> mEventProducers 
+		= new HashMap<Class<?>, Object>(); 
 	
 	private final TaskQueue mTaskQueue;
 	private final Handler mWorkerHandler;
 	private final Thread mWorkerThread;
 	private final BackgroundDispatcher mBackgroundDispatcher;
-	
-	private ArrayList<Events> mEvents;
+	private final WeakReference<Context> mContextRef;
+
+	private ArrayList<Wireable> mWireable;
 	private boolean mProcessing;
 	
 	//-- public api
@@ -99,9 +106,18 @@ public class TinyBus implements Bus {
 	public TinyBus(Context context) {
 		mTaskQueue = new TaskQueue();
 		mWorkerThread = Thread.currentThread();
+		
+		if (context == null) {
+			mContextRef = null;
+			mBackgroundDispatcher = null;
+			
+		} else {
+			mContextRef = new WeakReference<Context>(context);
+			mBackgroundDispatcher = TinyBusDepot.get(context).getBackgroundDispatcher();
+		}
+		
 		final Looper looper = Looper.myLooper();
 		mWorkerHandler = looper == null ? null : new Handler(looper);
-		mBackgroundDispatcher = context == null ? null : TinyBusDepot.get(context).getBackgroundDispatcher();
 	}
 	
 	@Override
@@ -158,6 +174,22 @@ public class TinyBus implements Bus {
 		}
 	}
 	
+	public TinyBus wire(Wireable wireable) {
+		if (mWireable == null) {
+			mWireable = new ArrayList<Wireable>();
+		}
+		mWireable.add(wireable);
+		wireable.bus = this;
+		
+		if (mContextRef != null) {
+			Context context = mContextRef.get();
+			if (context instanceof Application) {
+				wireable.onStart(context);
+			}
+		}
+		return this;
+	}
+	
 	private void assertWorkerThread() {
 		if (mWorkerThread != Thread.currentThread()) {
 			throw new IllegalStateException("You must call this method from the same thread, "
@@ -172,57 +204,60 @@ public class TinyBus implements Bus {
 		mProcessing = true;
 		Task task;
 		
+		ObjectMeta meta;
+		
 		while((task = mTaskQueue.poll()) != null) {
+			final Object obj = task.obj;
+			final Class<?> objClass = obj.getClass();
+			
 			switch (task.code) {
-				case Task.CODE_REGISTER: registerInternal(task.obj); break;
-				case Task.CODE_UNREGISTER: unregisterInternal(task.obj); break;
-				case Task.CODE_POST_EVENT: postInternal(task.obj); break;
-				default: throw new IllegalStateException("unsupported task code: " + task.code);
+			
+				case Task.CODE_REGISTER: {
+					meta = OBJECTS_META.get(objClass);
+					if (meta == null) {
+						meta = new ObjectMeta(obj);
+						OBJECTS_META.put(objClass, meta);
+					}
+					meta.registerAtReceivers(obj, mEventReceivers);
+					meta.registerAtProducers(obj, mEventProducers);
+					meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
+					meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
+					break;
+				}
+				
+				case Task.CODE_UNREGISTER: {
+					meta = OBJECTS_META.get(objClass);
+					meta.unregisterFromReceivers(obj, mEventReceivers);
+					meta.unregisterFromProducers(obj, mEventProducers);
+					break;
+				}
+				
+				case Task.CODE_POST_EVENT: {
+					final HashSet<Object> receivers = mEventReceivers.get(objClass);
+					if (receivers != null) {
+						EventCallback eventCallback;
+						try {
+							for (Object receiver : receivers) {
+								meta = OBJECTS_META.get(receiver.getClass());
+								eventCallback = meta.getEventCallback(objClass);
+								dispatchEvent(eventCallback, receiver, obj);
+							}
+						} catch (Exception e) {
+							if (e instanceof RuntimeException) {
+								throw (RuntimeException) e;
+							}
+							throw new RuntimeException(e);
+						}
+					}
+					break;
+				}
+				
+				default: throw new IllegalStateException("unexpected task code: " + task.code);
 			}
 			task.recycle();
 		}
 		
 		mProcessing = false;
-	}
-	
-	private void registerInternal(Object obj) {
-		ObjectMeta meta = OBJECTS_META.get(obj.getClass());
-		if (meta == null) {
-			meta = new ObjectMeta(obj);
-			OBJECTS_META.put(obj.getClass(), meta);
-		}
-		meta.registerAtReceivers(obj, mEventReceivers);
-		meta.registerAtProducers(obj, mEventProducers);
-		
-		meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
-		meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
-	}
-	
-	private void unregisterInternal(Object obj) {
-		ObjectMeta meta = OBJECTS_META.get(obj.getClass());
-		meta.unregisterFromReceivers(obj, mEventReceivers);
-		meta.unregisterFromProducers(obj, mEventProducers);
-	}
-	
-	private void postInternal(Object event) {
-		final Class<?> eventClass = event.getClass();
-		final HashSet<Object> receivers = mEventReceivers.get(eventClass);
-		if (receivers != null) {
-			ObjectMeta meta;
-			EventCallback eventCallback;
-			try {
-				for (Object receiver : receivers) {
-					meta = OBJECTS_META.get(receiver.getClass());
-					eventCallback = meta.getEventCallback(eventClass);
-					dispatchEvent(eventCallback, receiver, event);
-				}
-			} catch (Exception e) {
-				if (e instanceof RuntimeException) {
-					throw (RuntimeException) e;
-				}
-				throw new RuntimeException(e);
-			}
-		}
 	}
 	
 	//-- package methods
@@ -242,17 +277,17 @@ public class TinyBus implements Bus {
 		}
 	}
 	
-	void dispatchOnStart(Activity activity) {
-		if (mEvents != null) {
-			for (Events producer : mEvents) {
+	void dispatchOnStartWireable(Activity activity) {
+		if (mWireable != null) {
+			for (Wireable producer : mWireable) {
 				producer.onStart(activity);
 			}
 		}
 	}
 	
-	void dispatchOnStop(Activity activity) {
-		if (mEvents != null) {
-			for (Events producer : mEvents) {
+	void dispatchOnStopWireable(Activity activity) {
+		if (mWireable != null) {
+			for (Wireable producer : mWireable) {
 				producer.onStop(activity);
 			}
 		}
@@ -289,7 +324,9 @@ public class TinyBus implements Bus {
 			synchronized (POOL) {
 				task = POOL.acquire();
 			}
-			if (task == null) task = new Task();
+			if (task == null) {
+				task = new Task();
+			}
 			task.code = code;
 			task.obj = obj;
 			task.prev = null;

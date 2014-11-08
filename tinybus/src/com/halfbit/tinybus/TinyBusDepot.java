@@ -11,9 +11,8 @@ import android.util.Log;
 
 class TinyBusDepot implements ActivityLifecycleCallbacks {
 
-	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	private static final boolean DEBUG = false;
-	
+	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	private static TinyBusDepot INSTANCE;
 	
 	public static TinyBusDepot get(Context context) {
@@ -32,27 +31,14 @@ class TinyBusDepot implements ActivityLifecycleCallbacks {
 		app.registerActivityLifecycleCallbacks(this);
 	}
 
-	public TinyBus create(Context context) {
-		TinyBus bus = mBuses.get(context);
-		if (bus != null) {
-			throw new IllegalArgumentException("Bus has already been created for given context. "
-					+ "Use TinyBus.from(Context) method to access created bus instance. "
-					+ "Context: " + context);
-		}
-		bus = new TinyBus(context);
+	public TinyBus createBusInContext(Context context) {
+		final TinyBus bus = new TinyBus(context);
 		mBuses.put(context, bus);
 		return bus;
 	}
 	
-	public TinyBus from(Context context) {
-		final TinyBus bus = mBuses.get(context);
-		if (bus == null) {
-			throw new IllegalArgumentException("Bus has not yet been created in the context. "
-					+ "Use TinyBus.create(Context) method inside Activity.onCreate() or "
-					+ "Application.onCreate() to create bus instance attached to activity "
-					+ "or applicaiton. Context: " + context);
-		}
-		return bus;
+	public TinyBus getBusInContext(Context context) {
+		return mBuses.get(context);
 	}
 	
 	synchronized BackgroundDispatcher getBackgroundDispatcher() {
@@ -66,7 +52,7 @@ class TinyBusDepot implements ActivityLifecycleCallbacks {
 	public void onActivityStarted(Activity activity) {
 		TinyBus bus = mBuses.get(activity);
 		if (bus != null) {
-			bus.dispatchOnStart(activity);
+			bus.dispatchOnStartWireable(activity);
 		}
 		if (DEBUG) Log.d(TAG, " #### STARTED, bus count: " + mBuses.size());
 	}
@@ -75,7 +61,7 @@ class TinyBusDepot implements ActivityLifecycleCallbacks {
 	public void onActivityStopped(Activity activity) {
 		TinyBus bus = mBuses.get(activity);
 		if (bus != null) {
-			bus.dispatchOnStop(activity);
+			bus.dispatchOnStopWireable(activity);
 		}
 		if (DEBUG) Log.d(TAG, " #### STOPPED, bus count: " + mBuses.size());
 	}
