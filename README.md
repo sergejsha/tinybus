@@ -2,12 +2,20 @@
 
 ![tinybus][1]
 =======
-
 A lightweight event bus with easy to use API optimized for Android.
 
  - small footprint
  - easy to use
  - optimized for startup and event dispatching
+
+Version 2 changes
+=======
+
+1. You don't need to create bus instance and implement any interfaces. Just use ```TinyBus.from(Context)``` method to access a bus instance creted for you.
+2. You can ```post()``` events from any threads. They all will be delivered in main thread to your subscribers.
+3. You can annotate a method with @Subscribe(Mode.Background). All such subscribers will be called in a single background thread.
+4. You can ```wire()``` standard events emitters which will ```post()``` system events for you. Check out example application for more details.
+
 
 Performance comparison tests
 =======
@@ -21,21 +29,27 @@ Usage example
 ```java
 public class MainActivity extends Activity implements BusDepot {
 
-    // 1. First we need to implement BusDepot interface. BusDepot returns 
-    // an instance of event bus which is to be used by all other
-    // components inside this activity.
-
-    private final Bus mBus = new TinyBus();
-
+    // 1. First we need to get instance of bus attached to current
+    // context, which is out activity in this case. You don't need
+    // to create anything. TinyBus will create instance for you if
+    // there is no bus instance for the context yet.
+    
+    private Bus mBus;
+    
     @Override
-    public Bus getBus() {
-        return mBus;
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        mBus = TinyBus.from(this);
+        ...
     } 
     
     
     // 2. Every event receiver has to be registered to be able to receive 
     // events and unregister when it is not interested in events anymore. 
-    // The best place is to do it inside onStart/onStop methods.
+    // The best place to do it is inside onStart()/onStop() methods or your
+    // activity or fragment.
     
     @Override
     protected void onStart(Bundle savedInstance) {
@@ -56,7 +70,7 @@ public class MainActivity extends Activity implements BusDepot {
     @Subscribe
     public void onLoadingEvent(LoadingEvent event) {
         if (event.state == LoadingEvent.STATE_STARTED) {
-            // do something, for instance update ActionBar state
+            // put your logic here, e.g. update ActionBar state
         }
     }
 }
@@ -150,23 +164,23 @@ public class AnotherFragment extends Fragment {
 }
 ```
 
-Alternatively, you can create a single event bus instance and store it inside your application as following.
+Alternatively, if you need a single bus instance for the whole application, you have to request it from your application context. In the example below a fragment will post an event to the single event bus instance. Any receiver registrered at the same bus instance will receive this event.
 
 ```java
-public class App extends Application implements BusDepot {
+public class BackgroundFragment extends Fragment {
 
-    private final Bus mBus = new Bus();
-  
     @Override
-    public Bus getBus() {
-        return mBus;
+    public void onCreate(Bundle savedInstanceState) {
+        
+        // 1. Get singleton bus instance
+        TinyBus bus = TinyBus.from(getActivity().getApplicationContext());
+        
+        // 2. Post event
+        bus.post(new LoadingEvent(LoadingEvent.STATE_STARTED));
     }
   
 }
 ```
-
-Use the same, already mentioned, ```TinyBus.from(Context context)``` method to access the instance of event bus in activity or fragment.
-
 
 Event dispatching
 =======
