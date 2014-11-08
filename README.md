@@ -11,7 +11,7 @@ A lightweight event bus with easy to use API optimized for Android.
 Version 2 changes
 =======
 
-1. You don't need to create bus instance and implement any interfaces. Just use ```TinyBus.from(Context)``` method to access a bus instance creted for you.
+1. You don't need to create bus instance and implement any interfaces. Just use ```TinyBus.from(Context)``` method to access a bus instance creted for you. ```BusDepot``` interface became deprecated.
 2. You can ```post()``` events from any threads. They all will be delivered in main thread to your subscribers.
 3. You can annotate a method with @Subscribe(Mode.Background). All such subscribers will be called in a single background thread.
 4. You can ```wire()``` standard events emitters which will ```post()``` system events for you. Check out example application for more details.
@@ -27,7 +27,7 @@ Usage example
 =======
 
 ```java
-public class MainActivity extends Activity implements BusDepot {
+public class MainActivity extends Activity {
 
     // 1. First we need to get instance of bus attached to current
     // context, which is out activity in this case. You don't need
