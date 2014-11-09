@@ -9,6 +9,10 @@ A lightweight event bus with easy to use API optimized for Android.
  - easy to use
  - optimized for startup and event dispatching
 
+Version 2 (beta) available
+=======
+Checkout Version 2 beta in ```v2``` branch. It has plenty of new interesting features.
+
 Performance comparison tests
 =======
 ![tinybus][3]
