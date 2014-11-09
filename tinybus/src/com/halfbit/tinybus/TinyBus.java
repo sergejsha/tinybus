@@ -63,7 +63,7 @@ public class TinyBus implements Bus {
 	 * @param context
 	 * @return	event bus instance, never null
 	 */
-	public static TinyBus from(Context context) {
+	public static synchronized TinyBus from(Context context) {
 		final TinyBusDepot depot = TinyBusDepot.get(context);
 		TinyBus bus = depot.getBusInContext(context);
 		if (bus == null) {
@@ -147,15 +147,14 @@ public class TinyBus implements Bus {
 			if (!mProcessing) processQueue();
 			
 		} else {
-			if (mWorkerHandler != null) {
-				mWorkerHandler.post(Task.obtainTask(event, Task.RUNNABLE_REPOST_EVENT)
-						.setupRepostHandler(this));
-				
-			} else {
+			if (mWorkerHandler == null) {
 				throw new IllegalStateException("You can only call post() from a different "
 						+ "thread, if the thread, in which TinyBus was created, had a Looper. "
 						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
 			}
+			
+			mWorkerHandler.post(Task.obtainTask(event, Task.RUNNABLE_REPOST_EVENT)
+					.setupRepostHandler(this));
 		}
 	}
 	
