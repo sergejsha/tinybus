@@ -16,11 +16,6 @@ Version 2 changes
 3. You can annotate a method with @Subscribe(Mode.Background). All such subscribers will be called in a single background thread.
 4. You can ```wire()``` standard events emitters which will ```post()``` system events for you. Check out example application for more details.
 
-
-Version 2 (beta) available
-=======
-Checkout Version 2 beta in ```v2``` branch. It has plenty of new interesting features.
-
 Performance comparison tests
 =======
 ![tinybus][3]
