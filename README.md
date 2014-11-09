@@ -1,5 +1,3 @@
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
-
 ![tinybus][1]
 =======
 A lightweight event bus with easy to use API optimized for Android.
@@ -230,6 +228,7 @@ Proguard configuration
 }
 ```
 
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
 License
 =======
 
@@ -250,6 +249,6 @@ License
     limitations under the License.
 
 
-[1]: web/logo.png
+[1]: web/tinybus.png
 [2]: https://github.com/square/otto
 [3]: web/performance.png
