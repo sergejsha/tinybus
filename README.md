@@ -2,25 +2,34 @@
 =======
 A lightweight event bus with easy to use API optimized for Android.
 
- - small footprint
- - easy to use
- - optimized for startup and event dispatching
+TinyBus 
+ - simplifies communication between Activities and Fragments
+ - simplifies events exchange between background and Main Thread
+ - simplifies consumption of standard system events (like Battery Level, Connection State etc.)
+ - removes unneccessary interfaces and direct component dependencies
+ - is annotation based (no requiremens to method names, no interfaces to implement)
 
-Version 2 changes
+Why TinyBus? Because
+ - it's fast (optimized for startup and event dispatching)
+ - it's small (< 25K jar)
+ - it's well tested (> 50 junit tests)
+ - it's fun to use
+
+Changes in Version 2
 =======
 
 1. You don't need to create bus instance and implement any interfaces. Just use ```TinyBus.from(Context)``` method to access a bus instance creted for you. ```BusDepot``` interface became deprecated.
 2. You can ```post()``` events from any threads. They all will be delivered in main thread to your subscribers.
-3. You can annotate a method with @Subscribe(Mode.Background). All such subscribers will be called in a single background thread.
-4. You can ```wire()``` standard events emitters which will ```post()``` system events for you. Check out example application for more details.
+3. You can annotate a method with ```@Subscribe(Mode.Background)```. All such subscribers will be called in a single background thread.
+4. You can ```wire()``` standard events emitters which will listen to system events and ```post()``` them into yout bus. Check out example application for more details.
 
 Performance comparison tests
 =======
 ![tinybus][3]
 
-Executed on Galaxy Nexus device with Android 4.3 (Dalvik).
+Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
 
-Usage example
+Getting started
 =======
 
 ```java
@@ -182,35 +191,39 @@ public class BackgroundFragment extends Fragment {
 Event dispatching
 =======
 
-Event is dispatched in calling thread to all registered subscribers sequentially.
+By default, ```TinyBus``` dispatches events to all registered subscribers sequentially in Main Thread. If ```post()``` method is called in Main Thread, then subscribers are called directly. If ```post()``` method is called in a background thread, then ```TinyBus``` reroutes and dispatches events through Main Thread.
 
  * If another event gets posted while handling current event in a subscriber, then the bus completes dispatching of current event first, and then dispatches the new event.
- * TinyBus does *not* dispatch ```null``` events coming from a producer method. Such values are silently ignored.
+ * ```TinyBus``` does *not* dispatch ```null``` events coming from a producer method. Such values are silently ignored.
 
+If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then ```TinyBus``` notifies it in a background thread. There is a signe background thread for all possible bus instances. So if that thread is blocked, then all new background events will be queued for further processing.
 
 Relation to Otto event bus 
 =======
 
-TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. Although it uses same interfaces, TinyBus has different implementation written from scratch with a slightly different behavior. The main difference form Otto is that TinyBus is optimized for startup and event dispatching performance.
+TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. Although it uses same interfaces, TinyBus has different implementation written from scratch with a slightly different behavior. The main difference form Otto is that ```TinyBus``` is optimized for startup and event dispatching performance.
 
  * It uses object pool and fast singly linked list for event queue. This allows you to use it in projects where many events get dispatched frequently.
- * TinyBus is designed to be called from a single thread only. In most cases this is Main Thread. It doesn't use synchronized classes, which makes it fast.
- * TinyBus does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty these event types, which makes it fast.
- * TinyBus provides easy to use ```TinyBus.from(Context context)``` method for conveniently access bus instance from inside any Androd component.
-
+ * It is designed to be called from a single thread only. In most cases this is Main Thread. It doesn't use synchronized classes, which makes it fast.
+ * ```TinyBus``` does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty these event types, which makes it fast.
 
 Functional correctness 
 =======
-Functional correctness - a prove that event bus does exaclty what it has to do - is very important. That's why TinyBus has over 40 test-cases checking its functionality.
+Functional correctness - a prove that event bus does exaclty what it has to do - is very important. That's why ```TinyBus``` has over 50 test-cases checking its functionality.
 
-
-How to build
+Build with Ant
 =======
 
 1. git clone git@github.com:beworker/tinybus.git
 2. cd <git>/tinybus
 3. ant release
 
+Build with Gradle
+=======
+
+1. git clone git@github.com:beworker/tinybus.git
+2. cd <git>/tinybus
+3. gradle build
 
 How to execute JUnit tests
 =======
