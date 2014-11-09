@@ -125,13 +125,8 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new NullPointerException("Object must not be null");
 		assertWorkerThread();
 		
-		if (mProcessing) {
-			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
-			
-		} else {
-			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
-			processQueue();
-		}
+		mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+		if (!mProcessing) processQueue();
 	}
 
 	@Override
@@ -139,13 +134,8 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new NullPointerException("Object must not be null");
 		assertWorkerThread();
 		
-		if (mProcessing) {
-			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
-			
-		} else {
-			mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
-			processQueue();
-		}
+		mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+		if (!mProcessing) processQueue();
 	}
 
 	@Override
