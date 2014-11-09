@@ -250,6 +250,6 @@ License
     limitations under the License.
 
 
-[1]: web/logo.png
+[1]: web/tinybus.png
 [2]: https://github.com/square/otto
 [3]: web/performance.png
