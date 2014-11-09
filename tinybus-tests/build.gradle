@@ -11,10 +11,9 @@ dependencies {
 	compile fileTree('libs')
 }
 
-
 android {
 	compileSdkVersion 'android-20'
-	buildToolsVersion '20.0.0'
+	buildToolsVersion '21.1'
 
 	defaultConfig {
 		minSdkVersion 10
