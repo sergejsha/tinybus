@@ -153,13 +153,8 @@ public class TinyBus implements Bus {
 		if (event == null) throw new NullPointerException("Event must not be null");
 		
 		if (mWorkerThread == Thread.currentThread()) {
-			if (mProcessing) {
-				mTaskQueue.offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
-				
-			} else {
-				mTaskQueue.offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
-				processQueue();
-			}
+			mTaskQueue.offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
+			if (!mProcessing) processQueue();
 			
 		} else {
 			if (mWorkerHandler != null) {
