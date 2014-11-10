@@ -1,6 +1,6 @@
 ![tinybus][1]
 =======
-A lightweight event bus with easy to use API optimized for Android.
+your slick event bus for Android.
 
 TinyBus 
  - simplifies communication between Activities and Fragments
