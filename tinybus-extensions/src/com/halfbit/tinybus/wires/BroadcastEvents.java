@@ -1,4 +1,4 @@
-package com.halfbit.tinybus.events;
+package com.halfbit.tinybus.wires;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

@@ -8,11 +8,13 @@ import android.widget.Toast;
 import com.halfbit.tinybus.Bus;
 import com.halfbit.tinybus.Subscribe;
 import com.halfbit.tinybus.TinyBus;
-import com.halfbit.tinybus.events.BatteryEvents;
-import com.halfbit.tinybus.events.BatteryEvents.BatteryLevelEvent;
-import com.halfbit.tinybus.events.BroadcastEvents;
-import com.halfbit.tinybus.events.ConnectivityEvents;
-import com.halfbit.tinybus.events.ConnectivityEvents.ConnectionChangedEvent;
+import com.halfbit.tinybus.wires.BatteryEvents;
+import com.halfbit.tinybus.wires.BatteryEvents.BatteryLevelEvent;
+import com.halfbit.tinybus.wires.BroadcastEvents;
+import com.halfbit.tinybus.wires.ConnectivityEvents;
+import com.halfbit.tinybus.wires.ConnectivityEvents.ConnectionChangedEvent;
+import com.halfbit.tinybus.wires.ShakeEventWire;
+import com.halfbit.tinybus.wires.ShakeEventWire.ShakeEvent;
 
 public class MainActivity extends Activity {
 
@@ -25,6 +27,7 @@ public class MainActivity extends Activity {
 		
 		// Create a bus and attach it to activity
 		mBus = TinyBus.from(this)
+			.wire(new ShakeEventWire())
 			.wire(new ConnectivityEvents())
 			.wire(new BatteryEvents())
 			.wire(new BroadcastEvents(
@@ -66,5 +69,10 @@ public class MainActivity extends Activity {
 			Toast.makeText(this, "Power disconnected", Toast.LENGTH_SHORT).show();
 			
 		}
+	}
+	
+	@Subscribe
+	public void onShakeEvent(ShakeEvent event) {
+		Toast.makeText(this, "~ Device shaked ~", Toast.LENGTH_SHORT).show();
 	}
 }
