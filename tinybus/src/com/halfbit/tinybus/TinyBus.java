@@ -281,7 +281,7 @@ public class TinyBus implements Bus {
 	
 	static class Task implements Runnable {
 		
-		private static final SimplePool<Task> POOL = new SimplePool<Task>(QUEUE_SIZE);
+		private static final TaskPool POOL = new TaskPool(QUEUE_SIZE);
 		
 		public static final int CODE_REGISTER = 0;
 		public static final int CODE_UNREGISTER = 1;
@@ -307,9 +307,6 @@ public class TinyBus implements Bus {
 			Task task;
 			synchronized (POOL) {
 				task = POOL.acquire();
-			}
-			if (task == null) {
-				task = new Task();
 			}
 			task.code = code;
 			task.obj = obj;
@@ -398,48 +395,34 @@ public class TinyBus implements Bus {
     	}
     }
 	
-	/**
-	 * Copyright (C) 2013 The Android Open Source Project
-	 * http://www.apache.org/licenses/LICENSE-2.0
-	 * 
-	 * Modified code from AOSP
-	 */
-    static class SimplePool<T> {
-        private final Object[] mPool;
-        private int mPoolSize;
-
-        /**
-         * Creates a new instance.
-         * @param maxPoolSize The max pool size.
-         * @throws IllegalArgumentException If the max pool size is less than zero.
-         */
-        public SimplePool(int maxPoolSize) {
-            if (maxPoolSize <= 0) {
-                throw new IllegalArgumentException("The max pool size must be > 0");
-            }
-            mPool = new Object[maxPoolSize];
-        }
-
-        @SuppressWarnings("unchecked")
-        public T acquire() {
-            if (mPoolSize > 0) {
-                final int lastPooledIndex = mPoolSize - 1;
-                T instance = (T) mPool[lastPooledIndex];
-                mPool[lastPooledIndex] = null;
-                mPoolSize--;
-                return instance;
-            }
-            return null;
-        }
-
-        public boolean release(T instance) {
-            if (mPoolSize < mPool.length) {
-                mPool[mPoolSize] = instance;
-                mPoolSize++;
-                return true;
-            }
-            return false;
-        }
+    // pool of tasks
+    static class TaskPool {
+    	private final int mMaxSize;
+    	private int mSize;
+    	private Task tail;
+    	
+    	public TaskPool(int maxSize) {
+    		mMaxSize = maxSize;
+    	}
+    	
+    	Task acquire() {
+    		Task acquired = tail;
+    		if (acquired == null) {
+    			acquired = new Task();
+    		} else {
+    			tail = acquired.prev;
+    			mSize--;
+    		}
+    		return acquired;
+    	}
+    	
+		void release(Task task) {
+			if (mSize < mMaxSize) {
+				task.prev = tail;
+				tail = task;
+				mSize++;
+			}
+		}
     }
     
 }
