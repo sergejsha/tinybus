@@ -73,6 +73,6 @@ public class MainActivity extends Activity {
 	
 	@Subscribe
 	public void onShakeEvent(ShakeEvent event) {
-		Toast.makeText(this, "~ Device shaked ~", Toast.LENGTH_SHORT).show();
+		Toast.makeText(this, "~ Device has been shaken ~", Toast.LENGTH_SHORT).show();
 	}
 }
