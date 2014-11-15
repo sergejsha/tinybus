@@ -1,5 +1,9 @@
 apply plugin: 'android-library'
 
+dependencies {
+    compile project(':tinybus')
+}
+
 android {
 	compileSdkVersion 'android-20'
 	buildToolsVersion '21.1'
