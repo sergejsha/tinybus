@@ -4,13 +4,13 @@
 TinyBus 
  - simplifies communication between Activities, Fragments and Services
  - simplifies events exchange between background and Main Thread
- - simplifies consumption of standard system events (like Battery Level, Connection State etc.)
  - removes unneccessary interfaces and direct component dependencies
  - is annotation based (no requiremens to method names, no interfaces to implement)
+ - simplifies consumption of standard system events (like Battery Level, Connection State etc.)
 
 Why TinyBus? Because
  - it's fast (optimized for startup and event dispatching)
- - it's small (< 25K jar)
+ - it's small (~ 17K jar)
  - it's well tested (> 50 junit tests)
  - it's fun to use
 
