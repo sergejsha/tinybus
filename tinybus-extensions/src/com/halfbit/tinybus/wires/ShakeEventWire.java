@@ -7,9 +7,6 @@
 
 package com.halfbit.tinybus.wires;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -53,6 +50,7 @@ public class ShakeEventWire extends Wireable implements SensorEventListener {
 	protected void onStop(Context context) {
 		SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 		sensorManager.unregisterListener(this);
+		queue.clear();
 	}
 
 	@Override
@@ -157,17 +155,6 @@ public class ShakeEventWire extends Wireable implements SensorEventListener {
 				}
 				pool.release(removed);
 			}
-		}
-
-		/** Copies the samples into a list, with the oldest entry at index 0. */
-		List<Sample> asList() {
-			List<Sample> list = new ArrayList<Sample>();
-			Sample s = oldest;
-			while (s != null) {
-				list.add(s);
-				s = s.next;
-			}
-			return list;
 		}
 
 		/**
