@@ -2,7 +2,7 @@
 =======
 
 TinyBus 
- - simplifies communication between Activities and Fragments
+ - simplifies communication between Activities, Fragments and Services
  - simplifies events exchange between background and Main Thread
  - simplifies consumption of standard system events (like Battery Level, Connection State etc.)
  - removes unneccessary interfaces and direct component dependencies
