@@ -2,6 +2,7 @@
  * Copyright 2010 Square, Inc.
  * Copyright 2014 Sergej Shafarenka.
  * 
+ * This implementation is based on great seismic project.
  * More details at https://github.com/square/seismic
  */
 

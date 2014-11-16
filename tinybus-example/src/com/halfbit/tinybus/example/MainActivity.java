@@ -8,11 +8,11 @@ import android.widget.Toast;
 import com.halfbit.tinybus.Bus;
 import com.halfbit.tinybus.Subscribe;
 import com.halfbit.tinybus.TinyBus;
-import com.halfbit.tinybus.wires.BatteryEvents;
-import com.halfbit.tinybus.wires.BatteryEvents.BatteryLevelEvent;
-import com.halfbit.tinybus.wires.BroadcastEvents;
-import com.halfbit.tinybus.wires.ConnectivityEvents;
-import com.halfbit.tinybus.wires.ConnectivityEvents.ConnectionChangedEvent;
+import com.halfbit.tinybus.wires.BatteryWire;
+import com.halfbit.tinybus.wires.BatteryWire.BatteryLevelEvent;
+import com.halfbit.tinybus.wires.BroadcastReceiverWire;
+import com.halfbit.tinybus.wires.ConnectivityWire;
+import com.halfbit.tinybus.wires.ConnectivityWire.ConnectionChangedEvent;
 import com.halfbit.tinybus.wires.ShakeEventWire;
 import com.halfbit.tinybus.wires.ShakeEventWire.ShakeEvent;
 
@@ -28,9 +28,9 @@ public class MainActivity extends Activity {
 		// Create a bus and attach it to activity
 		mBus = TinyBus.from(this)
 			.wire(new ShakeEventWire())
-			.wire(new ConnectivityEvents())
-			.wire(new BatteryEvents())
-			.wire(new BroadcastEvents(
+			.wire(new ConnectivityWire())
+			.wire(new BatteryWire())
+			.wire(new BroadcastReceiverWire(
 					Intent.ACTION_POWER_CONNECTED, 
 					Intent.ACTION_POWER_DISCONNECTED));
 	}

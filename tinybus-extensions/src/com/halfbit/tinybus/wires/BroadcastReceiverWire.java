@@ -14,7 +14,7 @@ import com.halfbit.tinybus.TinyBus.Wireable;
  * 
  * @author sergej
  */
-public class BroadcastEvents extends Wireable {
+public class BroadcastReceiverWire extends Wireable {
 
 	private final IntentFilter mFilter;
 	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -28,26 +28,26 @@ public class BroadcastEvents extends Wireable {
 	private Object mProducer;
 	private Intent mIntent;
 	
-	public BroadcastEvents(String action) {
+	public BroadcastReceiverWire(String action) {
 		mFilter = new IntentFilter(action); 
 	}
 	
-	public BroadcastEvents(String... actions) {
+	public BroadcastReceiverWire(String... actions) {
 		mFilter = new IntentFilter();
 		for (String action : actions) {
 			mFilter.addAction(action);
 		}
 	}
 	
-	public BroadcastEvents(String action, boolean sticky) {
+	public BroadcastReceiverWire(String action, boolean sticky) {
 		this(new IntentFilter(action), sticky);
 	}
 	
-	public BroadcastEvents(IntentFilter filter) {
+	public BroadcastReceiverWire(IntentFilter filter) {
 		mFilter = filter;
 	}
 	
-	public BroadcastEvents(IntentFilter filter, boolean sticky) {
+	public BroadcastReceiverWire(IntentFilter filter, boolean sticky) {
 		mFilter = filter;
 		if (sticky) {
 			mProducer = new Object() {

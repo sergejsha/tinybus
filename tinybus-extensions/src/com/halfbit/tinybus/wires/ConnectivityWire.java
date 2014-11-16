@@ -12,7 +12,7 @@ import android.telephony.TelephonyManager;
 import com.halfbit.tinybus.Produce;
 import com.halfbit.tinybus.TinyBus.Wireable;
 
-public class ConnectivityEvents extends Wireable {
+public class ConnectivityWire extends Wireable {
 
 	//-- public events
 	
@@ -110,7 +110,7 @@ public class ConnectivityEvents extends Wireable {
 	private ConnectivityManager mConnectivityManager;
 	private ConnectionChangedEvent mConnectionChangedEvent;
 	
-	public ConnectivityEvents() {
+	public ConnectivityWire() {
 		mFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 	}
 	

@@ -9,7 +9,7 @@ import android.os.BatteryManager;
 import com.halfbit.tinybus.Produce;
 import com.halfbit.tinybus.TinyBus.Wireable;
 
-public class BatteryEvents extends Wireable {
+public class BatteryWire extends Wireable {
 
 	//-- public events
 	
@@ -86,7 +86,7 @@ public class BatteryEvents extends Wireable {
 	
 	private BatteryLevelEvent mBatteryLevelEvent;
 	
-	public BatteryEvents() {
+	public BatteryWire() {
 		mFilter = new IntentFilter();
 		mFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
 		mFilter.addAction(Intent.ACTION_BATTERY_LOW);

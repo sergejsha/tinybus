@@ -73,8 +73,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-	        mBus.register(this);
-	   }
+	    mBus.register(this);
+	}
 	
     @Override
     protected void onStop() {
