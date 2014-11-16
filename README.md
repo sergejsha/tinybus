@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
     }
 
     ...
+    
     @Subscribe
     public void onShakeEvent(ShakeEvent event) {
         // device has been shaken
