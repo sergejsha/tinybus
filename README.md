@@ -1,5 +1,4 @@
 ![tinybus][1]
-=======
 
 TinyBus is
 =======
