@@ -24,7 +24,7 @@ TinyBus quick start
 =======
 
 ```java
-    // 1. Create event
+   // 1. Create event
    public class LoadingEvent {
        // some fields if needed
    }
