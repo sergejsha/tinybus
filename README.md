@@ -117,4 +117,4 @@ License
 [1]: web/tinybus.png
 [2]: https://github.com/square/otto
 [3]: web/performance.png
-[4]: wiki/Getting-Started
+[4]: https://github.com/beworker/tinybus/wiki/Getting-Started
