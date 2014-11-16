@@ -58,6 +58,7 @@ TinyBus extensions
 
 With TinyBus extensions you can easily subscribe to commonly used events like battery level, connectivity or even phone shake events. See example application for more details.
 
+```java
     public class MainActivity extends Activity {
         private Bus mBus;
         
@@ -74,7 +75,7 @@ With TinyBus extensions you can easily subscribe to commonly used events like ba
             // device has been shaken
         }
     }
-
+```
 
 Differences to Otto event bus
 =======
