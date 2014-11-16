@@ -58,7 +58,7 @@ Differences to Otto event bus
 
 TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. It has different implementation written from scratch with a slightly different behavior. The main difference from Otto is that ```TinyBus``` is optimized for startup and event dispatching performance.
 
- * T```inyBus```'s ```post()``` method can be called from any thread.
+ * ```TinyBus```'s ```post()``` method can be called from any thread.
  * ```TinyBus``` can dispatch events into a background thread.
  * ```TinyBus``` does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty same event type.
  * TinyBus is much faster.
