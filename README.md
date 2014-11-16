@@ -1,32 +1,23 @@
 ![tinybus][1]
 =======
 
-TinyBus 
- - simplifies communication between Activities, Fragments and Services
- - simplifies events exchange between background and Main Thread
- - removes unneccessary interfaces and direct component dependencies
- - is annotation based (no requiremens to method names, no interfaces to implement)
- - simplifies consumption of standard system events (like Battery Level, Connection State etc.)
-
-Why TinyBus? Because
- - it's fast (optimized for startup and event dispatching)
- - it's small (~ 17K jar)
- - it's well tested (> 50 junit tests)
- - it's fun to use
-
-Changes in Version 2
-=======
-
-1. You don't need to create bus instance and implement any interfaces. Just use ```TinyBus.from(Context)``` method to access a bus instance creted for you. ```BusDepot``` interface became deprecated.
-2. You can ```post()``` events from any threads. They all will be delivered in main thread to your subscribers.
-3. You can annotate a method with ```@Subscribe(Mode.Background)```. All such subscribers will be called in a single background thread.
-4. You can ```wire()``` standard events emitters which will listen to system events and ```post()``` them into yout bus. Check out example application for more details.
+TinyBus is
+ - fast (optimized for startup and event dispatching)
+ - small (~ 17K jar)
+ - well tested (> 50 junit tests)
+ - annotation based (no requiremens to method names, no interfaces to implement)
 
 Performance comparison tests
 =======
 ![tinybus][3]
 
 Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
+
+TinyBus was designed to
+ - remove unneccessary interfaces and direct component dependencies
+ - simplify communication between Activities, Fragments and Services
+ - simplify events exchange between background and Main Thread
+ - simplify consumption of standard system events (like Battery Level, Connection State etc.)
 
 Getting started
 =======
