@@ -13,11 +13,35 @@ Performance comparison tests
 
 Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
 
-TinyBus was designed to
- - remove unneccessary interfaces and direct component dependencies
- - simplify communication between Activities, Fragments and Services
- - simplify events exchange between background and Main Thread
- - simplify consumption of standard system events (like Battery Level, Connection State etc.)
+TinyBus helps
+=======
+ - to remove unneccessary interfaces and direct component dependencies
+ - to simplify communication between Activities, Fragments and Services
+ - to simplify events exchange between background and Main Thread
+ - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
+
+TinyBus quick start
+=======
+
+```java
+    // 1. Create event
+   public class LoadingEvent {
+       // some fields if needed
+   }
+   
+   // 2. Prepare event subscriber (Activity, Fragment or any other component)
+   @Subscribe
+   public void onEvent(LoadingEvent event) {
+       // event handler logic
+   }
+   bus.register(this);
+   
+   // 3. post event
+   bus.post(new LoadingEvent());
+   
+```
+
+For a more detailed example check out [Getting started][4] step-by-step guide or example application.
 
 Event dispatching
 =======
@@ -29,18 +53,15 @@ By default, ```TinyBus``` dispatches events to all registered subscribers sequen
 
 If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then ```TinyBus``` notifies it in a background thread. There is a signe background thread for all possible bus instances. So if that thread is blocked, then all new background events will be queued for further processing.
 
-Relation to Otto event bus 
+Differences to Otto event bus
 =======
 
-TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. Although it uses same interfaces, TinyBus has different implementation written from scratch with a slightly different behavior. The main difference form Otto is that ```TinyBus``` is optimized for startup and event dispatching performance.
+TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. It has different implementation written from scratch with a slightly different behavior. The main difference from Otto is that ```TinyBus``` is optimized for startup and event dispatching performance.
 
- * It uses object pool and fast singly linked list for event queue. This allows you to use it in projects where many events get dispatched frequently.
- * It is designed to be called from a single thread only. In most cases this is Main Thread. It doesn't use synchronized classes, which makes it fast.
- * ```TinyBus``` does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty these event types, which makes it fast.
-
-Functional correctness 
-=======
-Functional correctness - a prove that event bus does exaclty what it has to do - is very important. That's why ```TinyBus``` has over 50 test-cases checking its functionality.
+ * TinyBus ```post()``` method can be called from any thread.
+ * TinyBus can dispatch events into a background thread.
+ * ```TinyBus``` does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty same event type.
+ * TinyBus is much faster.
 
 Build with Ant
 =======
@@ -96,3 +117,4 @@ License
 [1]: web/tinybus.png
 [2]: https://github.com/square/otto
 [3]: web/performance.png
+[4]: wiki/Getting-Started
