@@ -17,21 +17,20 @@ TinyBus quick start
 =======
 
 ```java
-   // 1. Create event
-   public class LoadingEvent {
-       // some fields if needed
-   }
+// 1. Create event
+public class LoadingEvent {
+   // some fields if needed
+}
    
-   // 2. Prepare event subscriber (Activity, Fragment or any other component)
-   @Subscribe
-   public void onEvent(LoadingEvent event) {
-       // event handler logic
-   }
-   bus.register(this);
+// 2. Prepare event subscriber (Activity, Fragment or any other component)
+@Subscribe
+public void onEvent(LoadingEvent event) {
+    // event handler logic
+}
+bus.register(this);
    
-   // 3. post event
-   bus.post(new LoadingEvent());
-   
+// 3. post event
+bus.post(new LoadingEvent());
 ```
 
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
@@ -59,22 +58,22 @@ TinyBus extensions
 With TinyBus extensions you can easily subscribe to commonly used events like battery level, connectivity or even phone shake events. See example application for more details.
 
 ```java
-    public class MainActivity extends Activity {
-        private Bus mBus;
+public class MainActivity extends Activity {
+    private Bus mBus;
         
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-	           super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_main);
-            mBus = TinyBus.from(this).wire(new ShakeEventWire())
-        }
-
-        ...
-        @Subscribe
-        public void onShakeEvent(ShakeEvent event) {
-            // device has been shaken
-        }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mBus = TinyBus.from(this).wire(new ShakeEventWire())
     }
+
+    ...
+    @Subscribe
+    public void onShakeEvent(ShakeEvent event) {
+        // device has been shaken
+    }
+}
 ```
 
 Differences to Otto event bus
