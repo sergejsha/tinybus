@@ -2,6 +2,7 @@
 =======
 
 TinyBus is
+=======
  - fast (optimized for startup and event dispatching)
  - tiny (~ 17K jar)
  - well tested (> 50 junit tests)
@@ -12,13 +13,6 @@ Performance comparison tests
 ![tinybus][3]
 
 Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
-
-TinyBus helps
-=======
- - to remove unneccessary interfaces and direct component dependencies
- - to simplify communication between Activities, Fragments and Services
- - to simplify events exchange between background and Main Thread
- - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
 
 TinyBus quick start
 =======
@@ -42,6 +36,13 @@ TinyBus quick start
 ```
 
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
+
+TinyBus helps
+=======
+ - to remove unneccessary interfaces and direct component dependencies
+ - to simplify communication between Activities, Fragments and Services
+ - to simplify events exchange between background and Main Thread
+ - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
 
 Event dispatching
 =======
