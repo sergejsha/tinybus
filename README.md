@@ -61,7 +61,7 @@ TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus
  * ```TinyBus```'s ```post()``` method can be called from any thread.
  * ```TinyBus``` can dispatch events into a background thread.
  * ```TinyBus``` does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty same event type.
- * TinyBus is much faster.
+ * ```TinyBus``` is much faster.
 
 Build with Ant
 =======
