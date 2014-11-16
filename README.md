@@ -65,10 +65,22 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mBus = TinyBus.from(this).wire(new ShakeEventWire())
+        
+        // get bus instance and wire device shake event
+        mBus = TinyBus.from(this).wire(new ShakeEventWire());
     }
-
-    ...
+    
+    @Override
+    protected void onStart() {
+        super.onStart();
+	        mBus.register(this);
+	   }
+	
+    @Override
+    protected void onStop() {
+        mBus.unregister(this);
+        super.onStop();
+    }
     
     @Subscribe
     public void onShakeEvent(ShakeEvent event) {
