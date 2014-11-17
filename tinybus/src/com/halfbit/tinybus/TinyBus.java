@@ -29,39 +29,83 @@ import android.os.Looper;
 import com.halfbit.tinybus.ObjectMeta.EventCallback;
 import com.halfbit.tinybus.Subscribe.Mode;
 
+/**
+ * Main bus implementation. You can either create a bus instance 
+ * by calling constructor or use static {@link #from(Context)} method. 
+ * 
+ * <p>When you use constructor you create a stand alone bus instance
+ * which is not bound to any context. You are not able to {@link #wire(Wireable)}
+ * any <code>Wireable</code>'s to such bus.
+ * 
+ * <p>Create your bus using {@link #from(Context)} method, if you want to use
+ * <code>Wireable</code>'s.
+ * 
+ * @author sergej
+ */
 public class TinyBus implements Bus {
 	
 	/**
-	 * You can {@link TinyBus#wire()} instances of this class to a bus.
-	 * Once wired, your <code>Wirable</code> will be started and stopped
-	 * depending on the context state. 
+	 * You can wire instances of this class to a bus instance using 
+	 * {@link TinyBus#wire(Wireable)} method. Once wired, <code>Wireable</code>
+	 * instance will be started and stopped automatically, reflecting the
+	 * status of context to which the bus instance is bound.
+	 *
+	 * <p>
+	 * If a bus is bound to an <code>Activity</code>, then <code>Wireable</code>
+	 * instance will be started when <code>Activity</code> starts and stopped 
+	 * when <code>Activity</code> stops. If it is bound to the <code>Application</code>,
+	 * then it will only be started once and newer stopped.
 	 * 
 	 * <p>
-	 * If the bus was created for an <i>Activity</i>, then all wired instances 
-	 * will be started and stopped when Activity starts and stops.
-	 * 
-	 * <p>
-	 * If context is <i>Application</i>, then all wired instance will be started
-	 * immediately after they became wired and won't be stopped afterwards.
-	 * 
-	 * <p>
-	 * <i>Service</i> context is not yet properly supported (TODO)
+	 * <code>Service</code> context is not yet properly supported. Current implementation
+	 * will never start <code>Wireable</code> instances wired to a bus bound to 
+	 * a service. (TODO)
 	 * 
 	 * @author sergej
 	 */
 	public static abstract class Wireable {
+		
+		/**
+		 * Instance of bus to which this <code>Wireable</code> is wired.
+		 */
 		protected Bus bus;
+		
+		/**
+		 * Gets called when bus's context is started.
+		 * @param context	bus's context, never null
+		 */
 		protected abstract void onStart(Context context);
+		
+		/**
+		 * Gets called, when bus's context is stopped (never for <code>Application</code>).
+		 * @param context	bus's context, never null
+		 */
 		protected abstract void onStop(Context context);
 	}	
 	
 	/**
-	 * Use this method to get a bus instance available in current context. 
+	 * Use this method to get a bus instance bound to the given context.
+	 * If instance does not yet exist in the context, a new instance 
+	 * will be created. Otherwise existing instance gets returned.
+	 *
+	 * <p>Bus instance can be bound to a context. 
 	 * 
-	 * TODO add more details 
+	 * <p>If you need a singleton instance existing only once for the 
+	 * whole application, provide application context here. This option
+	 * can be chosen for <code>Activity</code> to <code>Service</code> 
+	 * communication.
 	 * 
-	 * @param context
-	 * @return	event bus instance, never null
+	 * <p>
+	 * If you need a bus instance per <code>Activity</code>, you have 
+	 * to provide activity context in there. This option is perfect for
+	 * <code>Activity</code> to <code>Fragment</code> or 
+	 * <code>Fragment</code> to <code>Fragment</code> communication.
+	 * 
+	 * <p>
+	 * Bus instance gets destroyed when your context is destroyed.
+	 * 
+	 * @param context	context to which this instance of bus has to be bound
+	 * @return			event bus instance, never null
 	 */
 	public static synchronized TinyBus from(Context context) {
 		final TinyBusDepot depot = TinyBusDepot.get(context);
