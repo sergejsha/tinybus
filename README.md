@@ -55,7 +55,7 @@ If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then TinyBu
 TinyBus extensions
 =======
 
-With TinyBus extensions you can easily subscribe to commonly used events like battery level, connectivity or even phone shake event. Here is a short example.
+Extensions are additional diffirentiators of TinyBus from other event buses out there. With TinyBus extensions you can easily subscribe to commonly used events like battery level, connectivity, phone shake event or even standard Android broadcast Intents. Here is a short example.
 
 ```java
 public class MainActivity extends Activity {
