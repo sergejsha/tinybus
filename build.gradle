@@ -1,11 +1,22 @@
-subprojects {
-	buildscript {
-		repositories {
-			mavenCentral()
-		}
+buildscript {
+    repositories {
+        mavenCentral()
+    }
 
-		dependencies {
-			classpath 'com.android.tools.build:gradle:0.14+'
-		}
-	}
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.14+'
+    }
+}
+
+def isReleaseBuild() {
+    return version.contains("SNAPSHOT") == false
+}
+
+allprojects {
+    version = VERSION_NAME
+    group = GROUP
+
+    repositories {
+        mavenCentral()
+    }
 }
