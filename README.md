@@ -121,11 +121,20 @@ Execute JUnit tests
 1. cd <git>/tinybus-tests
 2. ant test
 
-Gradle dependency
+Gradle dependencies
 =======
+
+For pure event bus implementation
 ```
 dependencies {
-    // coming soon
+    compile 'de.halfbit:tinybus:2.0.0'
+}
+```
+For event bus with extensions
+```
+dependencies {
+    compile 'de.halfbit:tinybus:2.0.0'
+    compile 'de.halfbit:tinybus-extensions:2.0.0'
 }
 ```
 
