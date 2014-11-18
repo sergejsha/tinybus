@@ -42,20 +42,10 @@ TinyBus helps
  - to simplify events exchange between background and Main Thread
  - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
 
-Event dispatching
-=======
-
-By default, TinyBus dispatches events to all registered subscribers sequentially in Main Thread. If ```post()``` method is called in Main Thread, then subscribers are called directly. If ```post()``` method is called in a background thread, then TinyBus reroutes and dispatches events through Main Thread.
-
- * If another event gets posted while handling current event in a subscriber, then the bus completes dispatching of current event first, and then dispatches the new event.
- * TinyBus does *not* dispatch ```null``` events coming from a producer method. Such values are silently ignored.
-
-If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then TinyBus notifies it in a background thread. There is a signe background thread for all possible bus instances. So if that thread is blocked, then all new background events will be queued for further processing.
-
 TinyBus extensions
 =======
 
-Extensions are additional diffirentiators of TinyBus from other event buses out there. With TinyBus extensions you can easily subscribe to commonly used events like battery level, connectivity, phone shake event or even standard Android broadcast Intents. Here is a short example.
+Extensions is a unique feature of TinyBus. With it you can easily subscribe to commonly used events like battery level, connectivity change, phone shake event or even standard Android broadcast Intents. Here is a short example.
 
 ```java
 public class MainActivity extends Activity {
@@ -88,17 +78,27 @@ public class MainActivity extends Activity {
     }
 }
 ```
-See example application for more details.
+More detailed example can be found in example application.
 
+Event dispatching
+=======
+
+By default, TinyBus dispatches events to all registered subscribers sequentially in Main Thread. If ```post()``` method is called in Main Thread, then subscribers are called directly. If ```post()``` method is called in a background thread, then TinyBus reroutes and dispatches events through Main Thread.
+
+ * If another event gets posted while handling current event in a subscriber, then the bus completes dispatching of current event first, and then dispatches the new event.
+ * TinyBus does *not* dispatch ```null``` events coming from a producer method. Such values are silently ignored.
+
+If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then TinyBus notifies it in a background thread. There is a signe background thread for all possible bus instances. So if that thread is blocked, then all new background events will be queued for further processing.
 
 Differences to Otto event bus
 =======
 
-TinyBus adopts interfaces defined in [Otto project][2]. At the same time TinyBus is not a direct fork of Otto. It has different implementation written from scratch with a slightly different behavior. The main difference from Otto is that TinyBus is optimized for startup and event dispatching performance.
+TinyBus adopts and extends interfaces defined in [Otto project][2]. It is not a direct fork of Otto. TinyBus has different implementation written from scratch with a slightly different behavior. Here is the main changes.
 
  * TinyBus's ```post()``` method can be called from any thread.
  * TinyBus can dispatch events into a background thread.
  * TinyBus does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty same event type.
+ * TinyBus is faster.
  * TinyBus is much faster.
 
 Build with Ant
@@ -115,11 +115,19 @@ Build with Gradle
 2. cd <git>/tinybus
 3. gradle build
 
-How to execute JUnit tests
+Execute JUnit tests
 =======
 
 1. cd <git>/tinybus-tests
 2. ant test
+
+Gradle dependency
+=======
+```
+dependencies {
+    // coming soon
+}
+```
 
 Proguard configuration
 =======
