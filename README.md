@@ -127,14 +127,14 @@ Gradle dependencies
 For pure event bus implementation
 ```
 dependencies {
-    compile 'de.halfbit:tinybus:2.0.0'
+    compile 'de.halfbit:tinybus:2.0.+'
 }
 ```
 For event bus with extensions
 ```
 dependencies {
-    compile 'de.halfbit:tinybus:2.0.0'
-    compile 'de.halfbit:tinybus-extensions:2.0.0'
+    compile 'de.halfbit:tinybus:2.0.+'
+    compile 'de.halfbit:tinybus-extensions:2.0.+'
 }
 ```
 
