@@ -93,7 +93,7 @@ If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then TinyBu
 Migrating from Otto event bus
 =======
 
-TinyBus is backward compatible to [Otto][2] besides one thing. Because event inheritance makes event dispatching slower and complicated application logic, TinyBus doesn't support it by design. If you don't use event inheritance, you can migrate to TinyBus right away. Just replace package names and create bus instance using ```TinyBus``` class. In addition you will get following benefits:
+TinyBus is backward compatible to [Otto][2] besides one thing. Because event inheritance makes event dispatching slower and complicates application logic, TinyBus doesn't support it by design. If you don't use event inheritance, you can migrate to TinyBus right away. Just replace package names and create bus instance using ```TinyBus``` class. In addition you will get following benefits:
 
  * Method ```post()``` dispatches events in Main Thread even when called form a background thread.
  * Events can be dispatched into a background thread.
