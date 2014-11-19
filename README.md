@@ -90,16 +90,14 @@ By default, TinyBus dispatches events to all registered subscribers sequentially
 
 If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then TinyBus notifies it in a background thread. There is a signe background thread for all possible bus instances. So if that thread is blocked, then all new background events will be queued for further processing.
 
-Differences to Otto event bus
+Migrating from Otto event bus
 =======
 
-TinyBus adopts and extends interfaces defined in [Otto project][2]. It is not a direct fork of Otto. TinyBus has different implementation written from scratch with a slightly different behavior. Here is the main changes.
+TinyBus is backward compatible to [Otto][2] besides one thing. Because event inheritance makes event dispatching slower and complicated application logic, TinyBus doesn't support it by design. If you don't use event inheritance, you can migrate to TinyBus right away. Just replace package names and create bus instance using ```TinyBus``` class. In addition you will get following benefits:
 
- * TinyBus's ```post()``` method can be called from any thread.
- * TinyBus can dispatch events into a background thread.
- * TinyBus does not analyse event's class hierarhy. It dispatches events to subscribers listening for exaclty same event type.
- * TinyBus is faster.
- * TinyBus is much faster.
+ * Method ```post()``` dispatches events in Main Thread even when called form a background thread.
+ * Events can be dispatched into a background thread.
+ * Register/unregister as well as event dispatching will be much faster.
 
 Build with Ant
 =======
