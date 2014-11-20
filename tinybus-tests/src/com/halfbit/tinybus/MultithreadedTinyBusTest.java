@@ -206,7 +206,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 			bus.post(sentEvents[i]);
 		}
 		
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(4, TimeUnit.SECONDS);
 		
 		assertEquals(eventCount, callback.getEventsCount());
 		callback.assertEvents(sentEvents);

@@ -65,7 +65,7 @@ class ObjectMeta {
 			Object obj,
 			HashMap<Class<? extends Object>, HashSet<Object>> receivers,
 			HashMap<Class<? extends Object>, ObjectMeta> metas,
-			TinyBus bus) {
+			TinyBus bus) throws Exception {
 		
 		Iterator<Entry<Class<? extends Object>, Method>> 
 			producerCallbacks = mProducerCallbacks.entrySet().iterator();
@@ -76,24 +76,20 @@ class ObjectMeta {
 		Class<? extends Object> eventClass;
 		Entry<Class<? extends Object>, Method> producerCallback;
 		
-		try {
-			while (producerCallbacks.hasNext()) {
-				producerCallback = producerCallbacks.next();
-				eventClass = producerCallback.getKey();
-				
-				targetReceivers = receivers.get(eventClass);
-				if (targetReceivers != null && targetReceivers.size() > 0) {
-					event = produceEvent(eventClass, obj);
-					if (event != null) {
-						for (Object receiver : targetReceivers) {
-							meta = metas.get(receiver.getClass());
-							meta.dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
-						}
+		while (producerCallbacks.hasNext()) {
+			producerCallback = producerCallbacks.next();
+			eventClass = producerCallback.getKey();
+			
+			targetReceivers = receivers.get(eventClass);
+			if (targetReceivers != null && targetReceivers.size() > 0) {
+				event = produceEvent(eventClass, obj);
+				if (event != null) {
+					for (Object receiver : targetReceivers) {
+						meta = metas.get(receiver.getClass());
+						meta.dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
 					}
 				}
 			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 		
 	}
@@ -102,7 +98,7 @@ class ObjectMeta {
 			HashMap<Class<? extends Object>, Object> producers,
 			Object receiver,
 			HashMap<Class<? extends Object>, ObjectMeta> metas,
-			TinyBus bus) {
+			TinyBus bus) throws Exception {
 
 		Iterator<Class<? extends Object>> 
 			eventClasses = mEventCallbacks.keySet().iterator();
@@ -112,20 +108,16 @@ class ObjectMeta {
 		Object producer;
 		Class<? extends Object> eventClass;
 		
-		try {
-			while (eventClasses.hasNext()) {
-				eventClass = eventClasses.next();
-				producer = producers.get(eventClass);
-				if (producer != null) {
-					meta = metas.get(producer.getClass());
-					event = meta.produceEvent(eventClass, producer);
-					if (event != null) {
-						dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
-					}
+		while (eventClasses.hasNext()) {
+			eventClass = eventClasses.next();
+			producer = producers.get(eventClass);
+			if (producer != null) {
+				meta = metas.get(producer.getClass());
+				event = meta.produceEvent(eventClass, producer);
+				if (event != null) {
+					dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
 				}
 			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 
 	}

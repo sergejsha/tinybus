@@ -218,6 +218,8 @@ public class TinyBus implements Bus {
 		return this;
 	}
 	
+	//-- private methods
+	
 	private void assertWorkerThread() {
 		if (mWorkerThread != Thread.currentThread()) {
 			throw new IllegalStateException("You must call this method from the same thread, "
@@ -226,66 +228,71 @@ public class TinyBus implements Bus {
 		}
 	}
 	
-	//-- private methods
-	
 	private void processQueue() {
-		mProcessing = true;
 		Task task;
-		
 		ObjectMeta meta;
 		
-		while((task = mTaskQueue.poll()) != null) {
-			final Object obj = task.obj;
-			final Class<?> objClass = obj.getClass();
+		mProcessing = true;
+		try {
 			
-			switch (task.code) {
-			
-				case Task.CODE_REGISTER: {
-					meta = OBJECTS_META.get(objClass);
-					if (meta == null) {
-						meta = new ObjectMeta(obj);
-						OBJECTS_META.put(objClass, meta);
-					}
-					meta.registerAtReceivers(obj, mEventReceivers);
-					meta.registerAtProducers(obj, mEventProducers);
-					meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
-					meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
-					break;
-				}
+			while((task = mTaskQueue.poll()) != null) {
+				final Object obj = task.obj;
+				final Class<?> objClass = obj.getClass();
 				
-				case Task.CODE_UNREGISTER: {
-					meta = OBJECTS_META.get(objClass);
-					meta.unregisterFromReceivers(obj, mEventReceivers);
-					meta.unregisterFromProducers(obj, mEventProducers);
-					break;
-				}
+				switch (task.code) {
 				
-				case Task.CODE_POST_EVENT: {
-					final HashSet<Object> receivers = mEventReceivers.get(objClass);
-					if (receivers != null) {
-						EventCallback eventCallback;
+					case Task.CODE_REGISTER: {
+						meta = OBJECTS_META.get(objClass);
+						if (meta == null) {
+							meta = new ObjectMeta(obj);
+							OBJECTS_META.put(objClass, meta);
+						}
+						meta.registerAtReceivers(obj, mEventReceivers);
+						meta.registerAtProducers(obj, mEventProducers);
 						try {
-							for (Object receiver : receivers) {
-								meta = OBJECTS_META.get(receiver.getClass());
-								eventCallback = meta.getEventCallback(objClass);
-								dispatchEvent(eventCallback, receiver, obj);
-							}
+							meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
+							meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
 						} catch (Exception e) {
-							if (e instanceof RuntimeException) {
-								throw (RuntimeException) e;
-							}
 							throw new RuntimeException(e);
 						}
+						break;
 					}
-					break;
+					
+					case Task.CODE_UNREGISTER: {
+						meta = OBJECTS_META.get(objClass);
+						meta.unregisterFromReceivers(obj, mEventReceivers);
+						meta.unregisterFromProducers(obj, mEventProducers);
+						break;
+					}
+					
+					case Task.CODE_POST_EVENT: {
+						final HashSet<Object> receivers = mEventReceivers.get(objClass);
+						if (receivers != null) {
+							EventCallback eventCallback;
+							try {
+								for (Object receiver : receivers) {
+									meta = OBJECTS_META.get(receiver.getClass());
+									eventCallback = meta.getEventCallback(objClass);
+									dispatchEvent(eventCallback, receiver, obj);
+								}
+							} catch (Exception e) {
+								if (e instanceof RuntimeException) {
+									throw (RuntimeException) e;
+								}
+								throw new RuntimeException(e);
+							}
+						}
+						break;
+					}
+					
+					default: throw new IllegalStateException("unexpected task code: " + task.code);
 				}
-				
-				default: throw new IllegalStateException("unexpected task code: " + task.code);
+				task.recycle();
 			}
-			task.recycle();
-		}
-		
-		mProcessing = false;
+			
+		} finally {
+			mProcessing = false;
+		}		
 	}
 	
 	//-- package methods
