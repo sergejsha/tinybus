@@ -135,7 +135,6 @@ public class TinyBus implements Bus {
 	private final TaskQueue mTaskQueue;
 	private final Handler mWorkerHandler;
 	private final Thread mWorkerThread;
-	private final BackgroundDispatcher mBackgroundDispatcher;
 	private final WeakReference<Context> mContextRef;
 
 	private ArrayList<Wireable> mWireable;
@@ -150,15 +149,7 @@ public class TinyBus implements Bus {
 	public TinyBus(Context context) {
 		mTaskQueue = new TaskQueue();
 		mWorkerThread = Thread.currentThread();
-		
-		if (context == null) {
-			mContextRef = null;
-			mBackgroundDispatcher = null;
-			
-		} else {
-			mContextRef = new WeakReference<Context>(context);
-			mBackgroundDispatcher = TinyBusDepot.get(context).getBackgroundDispatcher();
-		}
+		mContextRef = context == null ? null : new WeakReference<Context>(context);
 		
 		final Looper looper = Looper.myLooper();
 		mWorkerHandler = looper == null ? null : new Handler(looper);
@@ -301,17 +292,19 @@ public class TinyBus implements Bus {
 			Object event) throws Exception {
 		
 		if (eventCallback.mode == Mode.Background) {
-			if (mBackgroundDispatcher == null) {
+			Context context = mContextRef == null ? null : mContextRef.get();
+			if (context == null) {
 				throw new IllegalStateException("To enable multithreaded dispatching "
 						+ "you have to create bus using TinyBus(Context) constructor.");
 			}
-			mBackgroundDispatcher.dispatchEvent(eventCallback, receiver, event);
+			TinyBusDepot.get(context).getBackgroundDispatcher()
+					.dispatchEvent(eventCallback, receiver, event);
 			
 		} else {
 			eventCallback.method.invoke(receiver, event);
 		}
 	}
-	
+
 	void dispatchOnStartWireable(Activity activity) {
 		if (mWireable != null) {
 			for (Wireable producer : mWireable) {
