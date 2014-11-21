@@ -2,10 +2,18 @@
 
 TinyBus is
 =======
- - fast (optimized for startup and event dispatching)
  - tiny (~ 17K jar)
+ - fast (optimized for startup and event dispatching)
  - well tested (> 50 junit tests)
  - annotation based (no requiremens to method names, no interfaces to implement)
+
+TinyBus is for those who want
+ - to remove unneccessary interfaces and direct component dependencies
+ - to simplify communication between Activities, Fragments and Services
+ - to simplify events exchange between background and Main Thread
+ - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
+
+For those who want to *simplify* their apps and *increase development productivity*, here is TinyBus in detail.
 
 Performance comparison tests
 =======
@@ -32,15 +40,7 @@ bus.register(this);
 // 3. post event
 bus.post(new LoadingEvent());
 ```
-
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
-
-TinyBus helps
-=======
- - to remove unneccessary interfaces and direct component dependencies
- - to simplify communication between Activities, Fragments and Services
- - to simplify events exchange between background and Main Thread
- - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
 
 TinyBus extensions
 =======
