@@ -42,6 +42,19 @@ bus.post(new LoadingEvent());
 ```
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
 
+TinyBus
+=======
+
+TinyBus implements interfaces defined in [Otto project][2] by applying them to Android's single thread model. There are two simple rules to follow, when using TinyBus: 
+
+ * Create TinyBus instance in Main Thread.
+ * Call ```register()``` and ```unregister()``` methods in Main Thread.
+
+To simplify communication with background threads TinyBus offers the following:
+ 
+ * Method ```post()``` dispatches events in Main Thread even when called form a background thread.
+ * Bus calls subscribers annotated with ```@Subscribe(Mode.Background)``` in a background thread.
+
 TinyBus extensions
 =======
 
@@ -80,27 +93,6 @@ public class MainActivity extends Activity {
 ```
 More detailed example can be found in example application.
 
-Event dispatching
-=======
-
-By default, TinyBus dispatches events to all registered subscribers sequentially in Main Thread. If ```post()``` method is called in Main Thread, then subscribers are called directly. If ```post()``` method is called in a background thread, then TinyBus reroutes and dispatches events through Main Thread.
-
- * If another event gets posted while handling current event in a subscriber, then the bus completes dispatching of current event first, and then dispatches the new event.
- * TinyBus does *not* dispatch ```null``` events coming from a producer method. Such values are silently ignored.
-
-If a subscriber is annotated with ```@Subscribe(Mode.Background)```, then TinyBus notifies it in a background thread. There is a signe background thread for all possible bus instances. So if that thread is blocked, then all new background events will be queued for further processing.
-
-Migrating from Otto event bus
-=======
-
-TinyBus is backward compatible to [Otto][2] besides one thing. Because traverse of event class hierarchy makes event dispatching slower, TinyBus doesn't support event inheritance by design. This suppose to keep your code simple and unambiguous. If you don't use event inheritance, you can safely migrate to TinyBus right away. Just replace package names and create bus instance using ```TinyBus``` class. In addition you will get following benefits:
-
- * Method ```post()``` dispatches events in Main Thread even when called form a background thread.
- * Events can be dispatched into a background thread.
- * TinyBus extentions can be used.
- * Register/unregister as well as event dispatching will be much faster.
-
- 
 Build with Ant
 =======
 
