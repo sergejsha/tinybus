@@ -12,8 +12,7 @@
         android:name="android.test.InstrumentationTestRunner"
         android:targetPackage="com.halfbit.tinybus.test" />
 
-    <application
-        android:allowBackup="false">
+    <application>
         <uses-library android:name="android.test.runner" />
     </application>
 
