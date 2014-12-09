@@ -1,5 +1,7 @@
 ![tinybus][1]
 
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
+
 TinyBus is
 =======
  - tiny (~ 17K jar)
@@ -138,9 +140,17 @@ Proguard configuration
     @com.halfbit.tinybus.Subscribe public *;
     @com.halfbit.tinybus.Produce public *;
 }
+
+-keepclassmembers enum com.halfbit.tinybus.Subscribe$Mode {
+	public *;
+}
 ```
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
+Used in
+=======
+
+[Settings Extended][5]
+
 License
 =======
 
@@ -165,3 +175,4 @@ License
 [2]: https://github.com/square/otto
 [3]: web/performance.png
 [4]: https://github.com/beworker/tinybus/wiki/Getting-Started
+[5]: https://play.google.com/store/apps/details?id=com.hb.settings
