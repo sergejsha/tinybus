@@ -22,15 +22,12 @@ TinyBus quick start
 
 ```java
 // 1. Create an event class
-public class LoadingEvent {
-   // with some fields, if required
-}
+public class LoadingEvent { /* with some fields, if required */ }
    
 // 2. Prepare event callback method inside Activity, Fragment or any other class
 @Subscribe
-public void onEvent(LoadingEvent event) {
-    // event handler logic
-}
+public void onEvent(LoadingEvent event) { /* event handler logic */ }
+// ... and register it in the bus
 bus.register(this);
    
 // 3. post event to subscriber
