@@ -15,34 +15,34 @@ TinyBus is for those who want
  - to simplify events exchange between background and Main Thread
  - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
 
-For those who want to *simplify* their apps and *increase development productivity*, here is TinyBus in detail.
-
-Performance comparison tests
-=======
-![tinybus][3]
-
-Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
+Like it? Here is TinyBus in detail.
 
 TinyBus quick start
 =======
 
 ```java
-// 1. Create event
+// 1. Create an event class
 public class LoadingEvent {
-   // some fields if needed
+   // with some fields, if required
 }
    
-// 2. Prepare event subscriber (Activity, Fragment or any other component)
+// 2. Prepare event callback method inside Activity, Fragment or any other class
 @Subscribe
 public void onEvent(LoadingEvent event) {
     // event handler logic
 }
 bus.register(this);
    
-// 3. post event
+// 3. post event to subscriber
 bus.post(new LoadingEvent());
 ```
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
+
+Performance comparison tests
+=======
+![tinybus][3]
+
+Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
 
 TinyBus
 =======
@@ -95,19 +95,12 @@ public class MainActivity extends Activity {
 ```
 More detailed example can be found in example application.
 
-Build with Ant
+Build
 =======
 
 1. git clone git@github.com:beworker/tinybus.git
 2. cd <git>/tinybus
-3. ant release
-
-Build with Gradle
-=======
-
-1. git clone git@github.com:beworker/tinybus.git
-2. cd <git>/tinybus
-3. gradle build
+3. gradle build (or ant release)
 
 Execute JUnit tests
 =======
@@ -154,7 +147,7 @@ Used in
 License
 =======
 
-    Copyright (c) 2014 Sergej Shafarenka, halfbit.de
+    Copyright (c) 2014-2015 Sergej Shafarenka, halfbit.de
     Copyright (C) 2012 Square, Inc.
     Copyright (C) 2007 The Guava Authors
     
