@@ -129,5 +129,5 @@ public class FailFastTest extends TestCase {
 			// OK
 		}
 	}
-	
+
 }

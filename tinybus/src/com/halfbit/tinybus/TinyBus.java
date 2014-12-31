@@ -16,6 +16,7 @@
 package com.halfbit.tinybus;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.halfbit.tinybus.ObjectMeta.EventCallback;
 import com.halfbit.tinybus.Subscribe.Mode;
@@ -118,6 +120,7 @@ public class TinyBus implements Bus {
 	
 	//-- implementation
 	
+	private static final String TAG = "tinybus";
 	private static final int QUEUE_SIZE = 12;
 	
 	// callback's (receivers and/or producers) meta
@@ -219,6 +222,21 @@ public class TinyBus implements Bus {
 		}
 	}
 	
+	private RuntimeException handleExceptionOnEventDispatch(Exception e) {
+		if (e instanceof InvocationTargetException) {
+			// extract subscriber method name to give developer more details
+			
+			String method = Log.getStackTraceString(e.getCause());
+			int start = method.indexOf("at") + 3;
+			method = method.substring(start, method.indexOf('\n', start));
+			Log.e(TAG, "Exception in @Subscriber method: " + method + ". See stack trace for more details.");
+			
+		} else if (e instanceof RuntimeException) {
+			return (RuntimeException) e;
+		}
+		return new RuntimeException(e);		
+	}
+	
 	private void processQueue() {
 		Task task;
 		ObjectMeta meta;
@@ -244,7 +262,7 @@ public class TinyBus implements Bus {
 							meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
 							meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
 						} catch (Exception e) {
-							throw new RuntimeException(e);
+							throw handleExceptionOnEventDispatch(e);
 						}
 						break;
 					}
@@ -267,10 +285,7 @@ public class TinyBus implements Bus {
 									dispatchEvent(eventCallback, receiver, obj);
 								}
 							} catch (Exception e) {
-								if (e instanceof RuntimeException) {
-									throw (RuntimeException) e;
-								}
-								throw new RuntimeException(e);
+								throw handleExceptionOnEventDispatch(e);
 							}
 						}
 						break;
