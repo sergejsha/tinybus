@@ -4,8 +4,6 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 import android.os.Looper;
-import android.test.InstrumentationTestCase;
-import android.test.UiThreadTest;
 
 import com.halfbit.tinybus.mocks.Event1;
 import com.halfbit.tinybus.mocks.Producer1;

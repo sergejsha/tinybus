@@ -149,6 +149,41 @@ class ObjectMeta {
 		}
 	}
 
+	public boolean hasRegisteredObject(Object obj, 
+			HashMap<Class<? extends Object>, HashSet<Object>> receivers,
+			HashMap<Class<? extends Object>, Object> producers) {
+
+		boolean registered = false;
+		
+		Iterator<Class<? extends Object>> keys;
+		HashSet<Object> eventReceivers;
+		
+		// check receivers
+		keys = mEventCallbacks.keySet().iterator();
+		while (keys.hasNext()) {
+			eventReceivers = receivers.get(keys.next());
+			if (eventReceivers != null) {
+				registered = eventReceivers.contains(obj);
+				if (registered) {
+					break;
+				}
+			}
+		}		
+
+		if (!registered) {
+			// check producers
+			keys = mProducerCallbacks.keySet().iterator();
+			while (keys.hasNext()) {
+				registered = producers.containsKey(keys.next());
+				if (registered) {
+					break;
+				}
+			}
+		}
+		
+		return registered;
+	}
+	
 	public void registerAtProducers(Object obj,
 			HashMap<Class<? extends Object>, Object> producers) {
 

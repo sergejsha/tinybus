@@ -177,6 +177,15 @@ public class TinyBus implements Bus {
 	}
 
 	@Override
+	public boolean hasRegistered(Object obj) {
+		if (obj == null) throw new NullPointerException("Object must not be null");
+		assertWorkerThread();
+		
+		ObjectMeta meta = OBJECTS_META.get(obj.getClass());
+		return meta != null && meta.hasRegisteredObject(obj, mEventReceivers, mEventProducers); 
+	}
+	
+	@Override
 	public void post(Object event) {
 		if (event == null) throw new NullPointerException("Event must not be null");
 		
@@ -223,17 +232,17 @@ public class TinyBus implements Bus {
 	}
 	
 	private RuntimeException handleExceptionOnEventDispatch(Exception e) {
+		if (e instanceof RuntimeException) {
+			return (RuntimeException) e;
+		}
+		
 		if (e instanceof InvocationTargetException) {
-			// extract subscriber method name to give developer more details
-			
+			// Extract subscriber method name to give developer more details
 			String method = Log.getStackTraceString(e.getCause());
 			int start = method.indexOf("at") + 3;
 			method = method.substring(start, method.indexOf('\n', start));
 			Log.e(TAG, "Exception in @Subscriber method: " + method + ". See stack trace for more details.");
-			
-		} else if (e instanceof RuntimeException) {
-			return (RuntimeException) e;
-		}
+		} 
 		return new RuntimeException(e);		
 	}
 	
