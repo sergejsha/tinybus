@@ -140,6 +140,7 @@ Used in
 =======
 
 [Settings Extended][5]
+[franco.Kernel updater][6]
 
 License
 =======
@@ -166,3 +167,4 @@ License
 [3]: web/performance.png
 [4]: https://github.com/beworker/tinybus/wiki/Getting-Started
 [5]: https://play.google.com/store/apps/details?id=com.hb.settings
+[6]: https://play.google.com/store/apps/details?id=com.franco.kernel
