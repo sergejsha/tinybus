@@ -139,8 +139,8 @@ Proguard configuration
 Used in
 =======
 
-[Settings Extended][5]
-[franco.Kernel updater][6]
+ - [Settings Extended][5]
+ - [franco.Kernel updater][6]
 
 License
 =======
