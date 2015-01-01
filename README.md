@@ -6,7 +6,7 @@ TinyBus is
 =======
  - tiny (~ 17K jar)
  - fast (optimized for startup and event dispatching)
- - well tested (> 50 junit tests)
+ - well tested (> 60 junit tests)
  - annotation based (no requiremens to method names, no interfaces to implement)
 
 TinyBus is for those who want
@@ -111,14 +111,14 @@ Gradle dependencies
 For pure event bus implementation
 ```
 dependencies {
-    compile 'de.halfbit:tinybus:2.0.+'
+    compile 'de.halfbit:tinybus:2.1.+'
 }
 ```
 For event bus with extensions
 ```
 dependencies {
-    compile 'de.halfbit:tinybus:2.0.+'
-    compile 'de.halfbit:tinybus-extensions:2.0.+'
+    compile 'de.halfbit:tinybus:2.1.+'
+    compile 'de.halfbit:tinybus-extensions:2.1.+'
 }
 ```
 
@@ -139,8 +139,8 @@ Proguard configuration
 Used in
 =======
 
- - [Settings Extended][5]
  - [franco.Kernel updater][6]
+ - [Settings Extended][5]
 
 License
 =======
