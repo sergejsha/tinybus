@@ -12,12 +12,12 @@ dependencies {
 }
 
 android {
-	compileSdkVersion 'android-20'
-	buildToolsVersion '21.1'
+	compileSdkVersion 'android-21'
+	buildToolsVersion '21.1.2'
 
 	defaultConfig {
 		minSdkVersion 10
-		targetSdkVersion 20
+		targetSdkVersion 21
 	}
 
 	sourceSets {
