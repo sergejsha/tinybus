@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import android.app.Activity;
 import android.app.Application;
+import android.app.Service;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -58,32 +58,33 @@ public class TinyBus implements Bus {
 	 * when <code>Activity</code> stops. If it is bound to the <code>Application</code>,
 	 * then it will only be started once and newer stopped.
 	 * 
-	 * <p>
-	 * <code>Service</code> context is not yet properly supported. Current implementation
-	 * will never start <code>Wireable</code> instances wired to a bus bound to 
-	 * a service. (TODO)
-	 * 
 	 * @author sergej
 	 */
 	public static abstract class Wireable {
 		
-		/**
-		 * Instance of bus to which this <code>Wireable</code> is wired.
-		 */
 		protected Bus bus;
+		protected Context context;
 		
-		/**
-		 * Gets called when bus's context is started.
-		 * @param context	bus's context, never null
-		 */
-		protected abstract void onStart(Context context);
+		protected void onCreate(Bus bus, Context context) {
+			this.bus = bus;
+			this.context = context;
+		}
 		
-		/**
-		 * Gets called, when bus's context is stopped (never for <code>Application</code>).
-		 * @param context	bus's context, never null
-		 */
-		protected abstract void onStop(Context context);
-	}	
+		protected void onDestroy() {
+			this.bus = null;
+			this.context = null;
+		}
+
+		protected void onStart() { }
+		protected void onStop() { }
+		
+		void assertSuperOnCreateCalled() {
+			if (bus == null) {
+				throw new IllegalStateException(
+						"You must call super.onCreate(bus, context) method when overriding it.");
+			}
+		}
+	}
 	
 	/**
 	 * Use this method to get a bus instance bound to the given context.
@@ -138,9 +139,9 @@ public class TinyBus implements Bus {
 	private final TaskQueue mTaskQueue;
 	private final Handler mWorkerHandler;
 	private final Thread mWorkerThread;
-	private final WeakReference<Context> mContextRef;
 
-	private ArrayList<Wireable> mWireable;
+	private WeakReference<Context> mContextRef;
+	private ArrayList<Wireable> mWireables;
 	private boolean mProcessing;
 	
 	//-- public api
@@ -152,7 +153,7 @@ public class TinyBus implements Bus {
 	public TinyBus(Context context) {
 		mTaskQueue = new TaskQueue();
 		mWorkerThread = Thread.currentThread();
-		mContextRef = context == null ? null : new WeakReference<Context>(context);
+		assignContext(context);
 		
 		final Looper looper = Looper.myLooper();
 		mWorkerHandler = looper == null ? null : new Handler(looper);
@@ -205,23 +206,72 @@ public class TinyBus implements Bus {
 		}
 	}
 	
+	//-- wireable implementation
+	
 	public TinyBus wire(Wireable wireable) {
-		if (mWireable == null) {
-			mWireable = new ArrayList<Wireable>();
+		assertWorkerThread();
+		Context context = getNotNullContext();
+
+		if (mWireables == null) {
+			mWireables = new ArrayList<Wireable>();
 		}
-		mWireable.add(wireable);
-		wireable.bus = this;
+		mWireables.add(wireable);
 		
-		if (mContextRef != null) {
-			Context context = mContextRef.get();
-			if (context instanceof Application) {
-				wireable.onStart(context);
-			}
+		wireable.onCreate(this, context.getApplicationContext());
+		wireable.assertSuperOnCreateCalled();
+		
+		if (context instanceof Application 
+				|| context instanceof Service) {
+			wireable.onStart();
 		}
 		return this;
 	}
+
+	@SuppressWarnings("unchecked")
+	public <T extends Wireable> T unwire(Class<T> wireClass) {
+		assertWorkerThread();
+		Context context = getNotNullContext();
+		
+		Wireable wireable = getWireable(wireClass);
+		if (wireable != null) {
+			
+			if (context instanceof Application 
+					|| context instanceof Service) {
+				wireable.onStop();
+				wireable.onDestroy();
+			}
+			
+			mWireables.remove(wireable);
+		}
+		return (T) wireable;
+	}
+	
+	public boolean hasWireable(Class<? extends Wireable> wireClass) {
+		return getWireable(wireClass) != null;
+	}
+	
+	private Wireable getWireable(Class<? extends Wireable> wireClass) {
+		if (mWireables == null) {
+			return null;
+		}
+		for(Wireable wireable : mWireables) {
+			if (wireClass.equals(wireable.getClass())) {
+				return wireable;
+			}
+		}
+		return null;
+	}
 	
 	//-- private methods
+	
+	private Context getNotNullContext() {
+		Context context = mContextRef == null ? null : mContextRef.get();
+		if (context == null) {
+			throw new IllegalStateException(
+				"You must create bus with TinyBus.from() method to use this function.");
+		}
+		return context;
+	}
 	
 	private void assertWorkerThread() {
 		if (mWorkerThread != Thread.currentThread()) {
@@ -312,10 +362,19 @@ public class TinyBus implements Bus {
 	
 	//-- package methods
 	
+	/**
+	 * We call this method when bus is transferred from 
+	 * one activity to another during configuration change. 
+	 */
+	void assignContext(Context context) {
+		mContextRef = context == null ? null : new WeakReference<Context>(context);
+	}
+	
 	void dispatchEvent(EventCallback eventCallback, Object receiver, 
 			Object event) throws Exception {
 		
 		if (eventCallback.mode == Mode.Background) {
+			// TODO fix me
 			Context context = mContextRef == null ? null : mContextRef.get();
 			if (context == null) {
 				throw new IllegalStateException("To enable multithreaded dispatching "
@@ -329,18 +388,28 @@ public class TinyBus implements Bus {
 		}
 	}
 
-	void dispatchOnStartWireable(Activity activity) {
-		if (mWireable != null) {
-			for (Wireable producer : mWireable) {
-				producer.onStart(activity);
+	//-- lifecycle methods
+	
+	void onStart() {
+		if (mWireables != null) {
+			for (Wireable wireable : mWireables) {
+				wireable.onStart();
 			}
 		}
 	}
 	
-	void dispatchOnStopWireable(Activity activity) {
-		if (mWireable != null) {
-			for (Wireable producer : mWireable) {
-				producer.onStop(activity);
+	void onStop() {
+		if (mWireables != null) {
+			for (Wireable wireable : mWireables) {
+				wireable.onStop();
+			}
+		}
+	}
+	
+	void onDestroy() {
+		if (mWireables != null) {
+			for (Wireable wireable : mWireables) {
+				wireable.onDestroy();
 			}
 		}
 	}

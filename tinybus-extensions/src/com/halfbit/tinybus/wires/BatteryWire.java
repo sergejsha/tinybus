@@ -94,13 +94,13 @@ public class BatteryWire extends Wireable {
 	}
 	
 	@Override
-	protected void onStart(Context context) {
+	protected void onStart() {
 		bus.register(this);
 		context.registerReceiver(mReceiver, mFilter);
 	}
 
 	@Override
-	protected void onStop(Context context) {
+	protected void onStop() {
 		bus.unregister(this);
 		context.unregisterReceiver(mReceiver);
 		mBatteryLevelEvent = null;

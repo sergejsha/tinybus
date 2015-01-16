@@ -60,7 +60,7 @@ public class BroadcastReceiverWire extends Wireable {
 	}
 
 	@Override
-	protected void onStart(Context context) {
+	protected void onStart() {
 		mIntent = context.registerReceiver(mReceiver, mFilter);
 		if (mProducer != null) {
 			bus.register(mProducer);
@@ -72,7 +72,7 @@ public class BroadcastReceiverWire extends Wireable {
 	}
 
 	@Override
-	protected void onStop(Context context) {
+	protected void onStop() {
 		if (mProducer != null) {
 			bus.unregister(mProducer);
 		}

@@ -115,7 +115,7 @@ public class ConnectivityWire extends Wireable {
 	}
 	
 	@Override
-	protected void onStart(Context context) {
+	protected void onStart() {
 		if (mConnectivityManager == null) {
 			mConnectivityManager = (ConnectivityManager) 
 					context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -135,7 +135,7 @@ public class ConnectivityWire extends Wireable {
 	}
 
 	@Override
-	protected void onStop(Context context) {
+	protected void onStop() {
 		bus.unregister(this);
 		context.unregisterReceiver(mReceiver);
 		mConnectionChangedEvent = null;

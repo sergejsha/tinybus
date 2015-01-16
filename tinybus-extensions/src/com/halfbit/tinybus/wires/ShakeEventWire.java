@@ -41,14 +41,14 @@ public class ShakeEventWire extends Wireable implements SensorEventListener {
 	public ShakeEventWire() { }
 
 	@Override
-	protected void onStart(Context context) {
+	protected void onStart() {
 		SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 		Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
 	}
 
 	@Override
-	protected void onStop(Context context) {
+	protected void onStop() {
 		SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 		sensorManager.unregisterListener(this);
 		queue.clear();
