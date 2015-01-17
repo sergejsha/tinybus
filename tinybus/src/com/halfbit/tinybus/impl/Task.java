@@ -82,7 +82,11 @@ public class Task implements Runnable {
 		
 		final Object receiver = this.receiverRef.get();
 		if (receiver != null) {
-			eventCallback.method.invoke(receiver, obj);
+			if (eventCallback.method.getParameterTypes().length == 2) {
+				eventCallback.method.invoke(receiver, obj, this.bus);
+			} else {
+				eventCallback.method.invoke(receiver, obj);
+			}
 		}
 	}
 	

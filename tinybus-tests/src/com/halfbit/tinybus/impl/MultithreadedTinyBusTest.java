@@ -273,6 +273,28 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 	}
 	
 	@UiThreadTest
+	public void testBackgroundCallbackWithTwoParameters() throws Throwable {
+		
+		final CountDownLatch latch = new CountDownLatch(1);
+		Callbacks subscriber = new Callbacks() {
+			@Subscribe(mode=Mode.Background, queue="global")
+			public void onEvent(String event, Bus bus) {
+				onCallback(event);
+				onCallback(bus);
+				latch.countDown();
+			}
+		};
+		
+		bus = new TinyBus(getInstrumentation().getContext());
+		bus.register(subscriber);
+		
+		bus.post("event");
+		latch.await(3, TimeUnit.SECONDS);
+		
+		subscriber.assertEvents("event", bus);
+	}
+	
+	@UiThreadTest
 	public void testTwoSubscribersSameInstance() throws Throwable {
 		
 		final Callbacks subscriber = new Callbacks() {
