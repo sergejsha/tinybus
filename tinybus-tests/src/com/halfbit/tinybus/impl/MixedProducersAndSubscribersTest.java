@@ -1,7 +1,8 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
 import junit.framework.TestCase;
 
+import com.halfbit.tinybus.TinyBus;
 import com.halfbit.tinybus.mocks.Event1;
 import com.halfbit.tinybus.mocks.Event3;
 import com.halfbit.tinybus.mocks.Producer1;

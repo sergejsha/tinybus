@@ -1,4 +1,4 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -6,6 +6,10 @@ import java.util.concurrent.TimeUnit;
 import android.test.InstrumentationTestCase;
 import android.test.UiThreadTest;
 
+import com.halfbit.tinybus.Bus;
+import com.halfbit.tinybus.Produce;
+import com.halfbit.tinybus.Subscribe;
+import com.halfbit.tinybus.TinyBus;
 import com.halfbit.tinybus.Subscribe.Mode;
 import com.halfbit.tinybus.mocks.Callbacks;
 import com.halfbit.tinybus.mocks.Event1;

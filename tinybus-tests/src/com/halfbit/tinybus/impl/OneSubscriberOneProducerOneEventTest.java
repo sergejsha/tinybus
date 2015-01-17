@@ -1,10 +1,11 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
 import android.os.Looper;
 
+import com.halfbit.tinybus.TinyBus;
 import com.halfbit.tinybus.mocks.Event1;
 import com.halfbit.tinybus.mocks.Producer1;
 import com.halfbit.tinybus.mocks.Subscriber1;

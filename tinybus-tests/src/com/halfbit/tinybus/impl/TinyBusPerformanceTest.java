@@ -1,5 +1,8 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
+import com.halfbit.tinybus.Bus;
+import com.halfbit.tinybus.Subscribe;
+import com.halfbit.tinybus.TinyBus;
 import com.halfbit.tinybus.mocks.Event1;
 import com.halfbit.tinybus.mocks.Event2;
 
