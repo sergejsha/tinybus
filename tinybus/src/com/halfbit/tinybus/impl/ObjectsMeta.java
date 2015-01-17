@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 
 import com.halfbit.tinybus.Produce;
 import com.halfbit.tinybus.Subscribe;
-import com.halfbit.tinybus.Subscribe.Mode;
 
 public class ObjectsMeta {
 
@@ -18,11 +17,13 @@ public class ObjectsMeta {
 		
 		public EventCallback(Method method, Subscribe ann) {
 			this.method = method;
-			this.mode = ann.value();
+			this.mode = ann.mode();
+			this.queue = ann.queue();
 		}
 		
 		public final Method method;
-		public final Mode mode;
+		public final int mode;
+		public final String queue;
 		
 	}
 	

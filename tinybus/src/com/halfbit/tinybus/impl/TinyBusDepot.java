@@ -11,6 +11,7 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import com.halfbit.tinybus.TinyBus;
+import com.halfbit.tinybus.impl.workers.Dispatcher;
 
 public class TinyBusDepot implements ActivityLifecycleCallbacks {
 
@@ -21,8 +22,8 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 		void onDestroy();
 	}
 	
-	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	private static final boolean DEBUG = false;
+	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	
 	private static final String KEY_BUS_ID = "com.halfbit.tinybus.id";
 	private static TinyBusDepot INSTANCE;
@@ -34,7 +35,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 		return INSTANCE;
 	}
 
-	private BackgroundDispatcher mBackgroundDispatcher;
+	private Dispatcher mDispatcher;
 	
 	private TinyBusDepot(Context context) {
 		final Application app = (Application) context.getApplicationContext();
@@ -57,11 +58,11 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 		return mBuses.get(context);
 	}
 	
-	public synchronized BackgroundDispatcher getBackgroundDispatcher() {
-		if (mBackgroundDispatcher == null) {
-			mBackgroundDispatcher = new BackgroundDispatcher();
+	public synchronized Dispatcher getDispatcher() {
+		if (mDispatcher == null) {
+			mDispatcher = new Dispatcher();
 		}
-		return mBackgroundDispatcher;
+		return mDispatcher;
 	}
 	
 	@Override
@@ -152,4 +153,12 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	@Override public void onActivityResumed(Activity activity) { }
 	@Override public void onActivityPaused(Activity activity) { }
 
+	void testDestroy() {
+		if (mDispatcher != null) {
+			mDispatcher.destroy();
+			mDispatcher = null;
+		}
+		mBuses.clear();
+		mTransientBuses.clear();
+	}
 }

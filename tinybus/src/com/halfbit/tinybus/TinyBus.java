@@ -215,7 +215,7 @@ public class TinyBus implements Bus {
 						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
 			}
 			
-			mWorkerHandler.post(Task.obtainTask(this, Task.RUNNABLE_REPOST_EVENT, event)
+			mWorkerHandler.post(Task.obtainTask(this, Task.BACKGROUND_DISPATCH_FROM_BACKGROUND, event)
 					.setupRepostHandler(this));
 		}
 	}
@@ -386,6 +386,7 @@ public class TinyBus implements Bus {
 
 		@Override
 		public void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception {
+			
 			if (eventCallback.mode == Mode.Background) {
 				// TODO fix me
 				Context context = mContextRef == null ? null : mContextRef.get();
@@ -393,8 +394,8 @@ public class TinyBus implements Bus {
 					throw new IllegalStateException("To enable multithreaded dispatching "
 							+ "you have to create bus using TinyBus(Context) constructor.");
 				}
-				TinyBusDepot.get(context).getBackgroundDispatcher()
-					.dispatchEvent(TinyBus.this, eventCallback, receiver, event);
+				TinyBusDepot.get(context).getDispatcher()
+					.dispatchEventInBackground(TinyBus.this, eventCallback, receiver, event);
 				
 			} else {
 				eventCallback.method.invoke(receiver, event);

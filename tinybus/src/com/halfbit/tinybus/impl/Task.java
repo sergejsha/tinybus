@@ -13,8 +13,8 @@ public class Task implements Runnable {
 	public static final int CODE_UNREGISTER = 1;
 	public static final int CODE_POST_EVENT = 2;
 	
-	public static final int RUNNABLE_REPOST_EVENT = 10;
-	public static final int RUNNABLE_DISPATCH_BACKGROUND_EVENT = 11;
+	public static final int BACKGROUND_DISPATCH_FROM_BACKGROUND = 10;
+	public static final int BACKGROUND_DISPATCH_IN_BACKGROUND = 11;
 	
 	public Task prev;
 	
@@ -57,9 +57,9 @@ public class Task implements Runnable {
 	
 	@Override
 	public void run() {
-		if (code != RUNNABLE_REPOST_EVENT) {
+		if (code != BACKGROUND_DISPATCH_FROM_BACKGROUND) {
 			throw new IllegalStateException("Assertion. Expected task " 
-					+ RUNNABLE_REPOST_EVENT + " while received " + code);
+					+ BACKGROUND_DISPATCH_FROM_BACKGROUND + " while received " + code);
 		}
 		code = CODE_POST_EVENT;
 		bus.post(this);
@@ -75,19 +75,15 @@ public class Task implements Runnable {
 	}
 	
 	public void dispatchInBackground() throws Exception {
-		if (code != RUNNABLE_DISPATCH_BACKGROUND_EVENT) {
+		if (code != BACKGROUND_DISPATCH_IN_BACKGROUND) {
 			throw new IllegalStateException("Assertion. Expected task " 
-					+ RUNNABLE_DISPATCH_BACKGROUND_EVENT + " while received " + code);
+					+ BACKGROUND_DISPATCH_IN_BACKGROUND + " while received " + code);
 		}
 		
 		final Object receiver = this.receiverRef.get();
 		if (receiver != null) {
 			eventCallback.method.invoke(receiver, obj);
 		}
-		
-		eventCallback = null;
-		receiverRef = null;
-		obj = null;
 	}
 	
 	//-- static classes

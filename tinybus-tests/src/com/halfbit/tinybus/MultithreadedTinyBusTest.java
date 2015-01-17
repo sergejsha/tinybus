@@ -91,7 +91,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		
 		bus = new TinyBus();
 		bus.register(new Object() {
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(String event) {
 				stringResult = event;
 				latch.countDown();
@@ -113,7 +113,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		bus = new TinyBus(getInstrumentation().getContext());
 		
 		bus.register(new Object() {
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(String event) {
 				stringResult = event;
 				latch.countDown();
@@ -134,25 +134,25 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		
 		final Callbacks callback = new Callbacks() {
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(String event) {
 				onCallback(event);
 				latch.countDown();
 			}
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(Event1 event) {
 				onCallback(event);
 				latch.countDown();
 			}
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(Event2 event) {
 				onCallback(event);
 				latch.countDown();
 			}
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(Object event) {
 				onCallback(event);
 				latch.countDown();
@@ -191,7 +191,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		
 		final Callbacks callback = new Callbacks() {
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(String event) {
 				onCallback(event);
 				latch.countDown();
@@ -224,7 +224,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		final CountDownLatch latch = new CountDownLatch(5);
 		final Callbacks callback1 = new Callbacks() {
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEvent(String event) {
 				onCallback(event);
 				latch.countDown();
@@ -273,7 +273,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		
 		final Callbacks subscriber = new Callbacks() {
 			
-			@Subscribe(Mode.Background)
+			@Subscribe(mode=Mode.Background)
 			public void onEventBackground(Event1 event) {
 				synchronized (this) {
 					onCallback(event);

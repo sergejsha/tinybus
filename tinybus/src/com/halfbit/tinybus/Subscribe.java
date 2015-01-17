@@ -37,11 +37,12 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Subscribe {
 	
-	public static enum Mode {
-		Main,
-		Background
+	public static final class Mode {
+		public static final int Main = 0;
+		public static final int Background = 1;
 	}	
 	
-	public Mode value() default Mode.Main;
+	int mode() default Mode.Main;
+	String queue() default "global";
 	
 }
