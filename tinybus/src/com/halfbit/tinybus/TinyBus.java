@@ -31,9 +31,11 @@ import android.util.Log;
 import com.halfbit.tinybus.Subscribe.Mode;
 import com.halfbit.tinybus.impl.ObjectsMeta;
 import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
+import com.halfbit.tinybus.impl.ObjectsMeta.EventDispatchCallback;
 import com.halfbit.tinybus.impl.Task;
 import com.halfbit.tinybus.impl.Task.TaskQueue;
 import com.halfbit.tinybus.impl.TinyBusDepot;
+import com.halfbit.tinybus.impl.TinyBusDepot.LifecycleComponent;
 
 /**
  * Main bus implementation. You can either create a bus instance 
@@ -139,13 +141,15 @@ public class TinyBus implements Bus {
 	private final HashMap<Class<?>, Object> mEventProducers 
 		= new HashMap<Class<?>, Object>(); 
 	
+	private final TinyBusImpl mImpl;
 	private final TaskQueue mTaskQueue;
 	private final Handler mWorkerHandler;
 	private final Thread mWorkerThread;
 
-	private WeakReference<Context> mContextRef;
-	private ArrayList<Wireable> mWireables;
 	private boolean mProcessing;
+	
+	WeakReference<Context> mContextRef;
+	ArrayList<Wireable> mWireables;
 	
 	//-- public api
 
@@ -154,6 +158,7 @@ public class TinyBus implements Bus {
 	}
 	
 	public TinyBus(Context context) {
+		mImpl = new TinyBusImpl();
 		mTaskQueue = new TaskQueue();
 		mWorkerThread = Thread.currentThread();
 		assignContext(context);
@@ -326,8 +331,8 @@ public class TinyBus implements Bus {
 						meta.registerAtReceivers(obj, mEventReceivers);
 						meta.registerAtProducers(obj, mEventProducers);
 						try {
-							meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, this);
-							meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, this);
+							meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, mImpl);
+							meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, mImpl);
 						} catch (Exception e) {
 							throw handleExceptionOnEventDispatch(e);
 						}
@@ -349,7 +354,7 @@ public class TinyBus implements Bus {
 								for (Object receiver : receivers) {
 									meta = OBJECTS_META.get(receiver.getClass());
 									eventCallback = meta.getEventCallback(objClass);
-									dispatchEvent(eventCallback, receiver, obj);
+									mImpl.dispatchEvent(eventCallback, receiver, obj);
 								}
 							} catch (Exception e) {
 								throw handleExceptionOnEventDispatch(e);
@@ -378,48 +383,57 @@ public class TinyBus implements Bus {
 		mContextRef = context == null ? null : new WeakReference<Context>(context);
 	}
 	
-	public void dispatchEvent(EventCallback eventCallback, Object receiver, 
-			Object event) throws Exception {
-		
-		if (eventCallback.mode == Mode.Background) {
-			// TODO fix me
-			Context context = mContextRef == null ? null : mContextRef.get();
-			if (context == null) {
-				throw new IllegalStateException("To enable multithreaded dispatching "
-						+ "you have to create bus using TinyBus(Context) constructor.");
-			}
-			TinyBusDepot.get(context).getBackgroundDispatcher()
-					.dispatchEvent(this, eventCallback, receiver, event);
-			
-		} else {
-			eventCallback.method.invoke(receiver, event);
-		}
+	public LifecycleComponent getLifecycleComponent() {
+		return mImpl;
 	}
+	
+	// inner, not public implementation
+	
+	class TinyBusImpl implements EventDispatchCallback, LifecycleComponent {
 
-	//-- lifecycle methods
-	
-	public void onStart() {
-		if (mWireables != null) {
-			for (Wireable wireable : mWireables) {
-				wireable.onStart();
+		@Override
+		public void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception {
+			if (eventCallback.mode == Mode.Background) {
+				// TODO fix me
+				Context context = mContextRef == null ? null : mContextRef.get();
+				if (context == null) {
+					throw new IllegalStateException("To enable multithreaded dispatching "
+							+ "you have to create bus using TinyBus(Context) constructor.");
+				}
+				TinyBusDepot.get(context).getBackgroundDispatcher()
+					.dispatchEvent(TinyBus.this, eventCallback, receiver, event);
+				
+			} else {
+				eventCallback.method.invoke(receiver, event);
 			}
 		}
-	}
-	
-	public void onStop() {
-		if (mWireables != null) {
-			for (Wireable wireable : mWireables) {
-				wireable.onStop();
+
+		@Override
+		public void onStart() {
+			if (mWireables != null) {
+				for (Wireable wireable : mWireables) {
+					wireable.onStart();
+				}
 			}
 		}
-	}
-	
-	public void onDestroy() {
-		if (mWireables != null) {
-			for (Wireable wireable : mWireables) {
-				wireable.onDestroy();
+		
+		@Override
+		public void onStop() {
+			if (mWireables != null) {
+				for (Wireable wireable : mWireables) {
+					wireable.onStop();
+				}
 			}
 		}
+		
+		@Override
+		public void onDestroy() {
+			if (mWireables != null) {
+				for (Wireable wireable : mWireables) {
+					wireable.onDestroy();
+				}
+			}
+		}
+		
 	}
-    
 }

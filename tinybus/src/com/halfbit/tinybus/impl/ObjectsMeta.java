@@ -9,11 +9,10 @@ import java.util.Map.Entry;
 import com.halfbit.tinybus.Produce;
 import com.halfbit.tinybus.Subscribe;
 import com.halfbit.tinybus.Subscribe.Mode;
-import com.halfbit.tinybus.TinyBus;
 
 public class ObjectsMeta {
 
-	//-- static classes
+	//-- static classes and interfaces
 	
 	public static class EventCallback {
 		
@@ -25,6 +24,11 @@ public class ObjectsMeta {
 		public final Method method;
 		public final Mode mode;
 		
+	}
+	
+	/** Implementation of this callback handles actual event dispatching. */
+	public static interface EventDispatchCallback {
+		void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception;
 	}
 	
 	//-- implementation
@@ -68,7 +72,7 @@ public class ObjectsMeta {
 			Object obj,
 			HashMap<Class<? extends Object>, HashSet<Object>> receivers,
 			HashMap<Class<? extends Object>, ObjectsMeta> metas,
-			TinyBus bus) throws Exception {
+			EventDispatchCallback callback) throws Exception {
 		
 		Iterator<Entry<Class<? extends Object>, Method>> 
 			producerCallbacks = mProducerCallbacks.entrySet().iterator();
@@ -89,7 +93,7 @@ public class ObjectsMeta {
 				if (event != null) {
 					for (Object receiver : targetReceivers) {
 						meta = metas.get(receiver.getClass());
-						meta.dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
+						meta.dispatchEventIfCallbackExists(eventClass, event, receiver, callback);
 					}
 				}
 			}
@@ -101,7 +105,7 @@ public class ObjectsMeta {
 			HashMap<Class<? extends Object>, Object> producers,
 			Object receiver,
 			HashMap<Class<? extends Object>, ObjectsMeta> metas,
-			TinyBus bus) throws Exception {
+			EventDispatchCallback callback) throws Exception {
 
 		Iterator<Class<? extends Object>> 
 			eventClasses = mEventCallbacks.keySet().iterator();
@@ -118,7 +122,7 @@ public class ObjectsMeta {
 				meta = metas.get(producer.getClass());
 				event = meta.produceEvent(eventClass, producer);
 				if (event != null) {
-					dispatchEventIfCallbackExists(eventClass, event, receiver, bus);
+					dispatchEventIfCallbackExists(eventClass, event, receiver, callback);
 				}
 			}
 		}
@@ -131,10 +135,10 @@ public class ObjectsMeta {
 	}
 
 	public void dispatchEventIfCallbackExists(Class<? extends Object> eventClass, 
-			Object event, Object receiver, TinyBus bus) throws Exception {
+			Object event, Object receiver, EventDispatchCallback callback) throws Exception {
 		EventCallback eventCallback = mEventCallbacks.get(eventClass);
 		if (eventCallback != null) {
-			bus.dispatchEvent(eventCallback, receiver, event);
+			callback.dispatchEvent(eventCallback, receiver, event);
 		}
 	}
 	

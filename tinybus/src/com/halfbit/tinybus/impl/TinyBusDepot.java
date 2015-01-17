@@ -14,6 +14,12 @@ import com.halfbit.tinybus.TinyBus;
 
 public class TinyBusDepot implements ActivityLifecycleCallbacks {
 
+	public static interface LifecycleComponent {
+		void onStart();
+		void onStop();
+		void onDestroy();
+	}
+	
 	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	private static final boolean DEBUG = false;
 	
@@ -69,7 +75,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 				mTransientBuses.removeAt(transientBusIndex);
 			}
 			
-			bus.onStart();
+			bus.getLifecycleComponent().onStart();
 		}
 		if (DEBUG) Log.d(TAG, " ### STARTED, bus count: " + mBuses.size());
 	}
@@ -78,7 +84,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	public void onActivityStopped(Activity activity) {
 		TinyBus bus = mBuses.get(activity);
 		if (bus != null) {
-			bus.onStop();
+			bus.getLifecycleComponent().onStop();
 		}
 		if (DEBUG) Log.d(TAG, " ### STOPPED, bus count: " + mBuses.size());
 	}
@@ -87,7 +93,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	public void onActivityDestroyed(Activity activity) {
 		TinyBus bus = mBuses.remove(activity);
 		if (bus != null && !activity.isChangingConfigurations()) {
-			bus.onDestroy();
+			bus.getLifecycleComponent().onDestroy();
 			if (DEBUG) {
 				Log.d(TAG, " ### destroying bus: " + bus);
 			}
