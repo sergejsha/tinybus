@@ -1,12 +1,12 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
 import android.os.Process;
 
-import com.halfbit.tinybus.ObjectMeta.EventCallback;
-import com.halfbit.tinybus.TinyBus.Task;
-import com.halfbit.tinybus.TinyBus.TaskQueue;
+import com.halfbit.tinybus.TinyBus;
+import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
+import com.halfbit.tinybus.impl.Task.TaskQueue;
 
-class BackgroundDispatcher implements Runnable {
+public class BackgroundDispatcher implements Runnable {
 
 	private final TaskQueue mTaskQueue;
 	private Thread mBackgroundThread;
@@ -17,9 +17,9 @@ class BackgroundDispatcher implements Runnable {
 		mBackgroundThread.start();
 	}
 	
-	public void dispatchEvent(EventCallback eventCallback, 
+	public void dispatchEvent(TinyBus bus, EventCallback eventCallback, 
 			Object receiver, Object event) throws Exception {
-		final Task task = Task.obtainTask(null, Task.RUNNABLE_DISPATCH_BACKGROUND_EVENT)
+		final Task task = Task.obtainTask(bus, Task.RUNNABLE_DISPATCH_BACKGROUND_EVENT, null)
 				.setupDispatchEventHandler(eventCallback, receiver, event);
 		
 		synchronized (mTaskQueue) {

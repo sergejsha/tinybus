@@ -28,8 +28,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.halfbit.tinybus.ObjectMeta.EventCallback;
 import com.halfbit.tinybus.Subscribe.Mode;
+import com.halfbit.tinybus.impl.ObjectsMeta;
+import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
+import com.halfbit.tinybus.impl.Task;
+import com.halfbit.tinybus.impl.Task.TaskQueue;
+import com.halfbit.tinybus.impl.TinyBusDepot;
 
 /**
  * Main bus implementation. You can either create a bus instance 
@@ -122,11 +126,10 @@ public class TinyBus implements Bus {
 	//-- implementation
 	
 	private static final String TAG = "tinybus";
-	private static final int QUEUE_SIZE = 12;
 	
 	// callback's (receivers and/or producers) meta
-	private static final HashMap<Class<?>, ObjectMeta> OBJECTS_META 
-		= new HashMap<Class<?>, ObjectMeta>();
+	private static final HashMap<Class<?>, ObjectsMeta> OBJECTS_META 
+		= new HashMap<Class<?>, ObjectsMeta>();
 	
 	// event class to receiver objects map 
 	private final HashMap<Class<?>, HashSet<Object>> mEventReceivers
@@ -164,7 +167,7 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new NullPointerException("Object must not be null");
 		assertWorkerThread();
 		
-		mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_REGISTER));
+		mTaskQueue.offer(Task.obtainTask(this, Task.CODE_REGISTER, obj));
 		if (!mProcessing) processQueue();
 	}
 
@@ -173,7 +176,7 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new NullPointerException("Object must not be null");
 		assertWorkerThread();
 		
-		mTaskQueue.offer(Task.obtainTask(obj, Task.CODE_UNREGISTER));
+		mTaskQueue.offer(Task.obtainTask(this, Task.CODE_UNREGISTER, obj));
 		if (!mProcessing) processQueue();
 	}
 
@@ -182,7 +185,7 @@ public class TinyBus implements Bus {
 		if (obj == null) throw new NullPointerException("Object must not be null");
 		assertWorkerThread();
 		
-		ObjectMeta meta = OBJECTS_META.get(obj.getClass());
+		ObjectsMeta meta = OBJECTS_META.get(obj.getClass());
 		return meta != null && meta.hasRegisteredObject(obj, mEventReceivers, mEventProducers); 
 	}
 	
@@ -191,7 +194,12 @@ public class TinyBus implements Bus {
 		if (event == null) throw new NullPointerException("Event must not be null");
 		
 		if (mWorkerThread == Thread.currentThread()) {
-			mTaskQueue.offer(Task.obtainTask(event, Task.CODE_POST_EVENT));
+			
+			// we post a Task instance when dispatching from a background thread
+			Task task = event instanceof Task ? (Task) event 
+					: Task.obtainTask(this, Task.CODE_POST_EVENT, event);
+					
+			mTaskQueue.offer(task);
 			if (!mProcessing) processQueue();
 			
 		} else {
@@ -201,7 +209,7 @@ public class TinyBus implements Bus {
 						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
 			}
 			
-			mWorkerHandler.post(Task.obtainTask(event, Task.RUNNABLE_REPOST_EVENT)
+			mWorkerHandler.post(Task.obtainTask(this, Task.RUNNABLE_REPOST_EVENT, event)
 					.setupRepostHandler(this));
 		}
 	}
@@ -298,7 +306,7 @@ public class TinyBus implements Bus {
 	
 	private void processQueue() {
 		Task task;
-		ObjectMeta meta;
+		ObjectsMeta meta;
 		
 		mProcessing = true;
 		try {
@@ -312,7 +320,7 @@ public class TinyBus implements Bus {
 					case Task.CODE_REGISTER: {
 						meta = OBJECTS_META.get(objClass);
 						if (meta == null) {
-							meta = new ObjectMeta(obj);
+							meta = new ObjectsMeta(obj);
 							OBJECTS_META.put(objClass, meta);
 						}
 						meta.registerAtReceivers(obj, mEventReceivers);
@@ -366,11 +374,11 @@ public class TinyBus implements Bus {
 	 * We call this method when bus is transferred from 
 	 * one activity to another during configuration change. 
 	 */
-	void assignContext(Context context) {
+	public void assignContext(Context context) {
 		mContextRef = context == null ? null : new WeakReference<Context>(context);
 	}
 	
-	void dispatchEvent(EventCallback eventCallback, Object receiver, 
+	public void dispatchEvent(EventCallback eventCallback, Object receiver, 
 			Object event) throws Exception {
 		
 		if (eventCallback.mode == Mode.Background) {
@@ -381,7 +389,7 @@ public class TinyBus implements Bus {
 						+ "you have to create bus using TinyBus(Context) constructor.");
 			}
 			TinyBusDepot.get(context).getBackgroundDispatcher()
-					.dispatchEvent(eventCallback, receiver, event);
+					.dispatchEvent(this, eventCallback, receiver, event);
 			
 		} else {
 			eventCallback.method.invoke(receiver, event);
@@ -390,7 +398,7 @@ public class TinyBus implements Bus {
 
 	//-- lifecycle methods
 	
-	void onStart() {
+	public void onStart() {
 		if (mWireables != null) {
 			for (Wireable wireable : mWireables) {
 				wireable.onStart();
@@ -398,7 +406,7 @@ public class TinyBus implements Bus {
 		}
 	}
 	
-	void onStop() {
+	public void onStop() {
 		if (mWireables != null) {
 			for (Wireable wireable : mWireables) {
 				wireable.onStop();
@@ -406,160 +414,12 @@ public class TinyBus implements Bus {
 		}
 	}
 	
-	void onDestroy() {
+	public void onDestroy() {
 		if (mWireables != null) {
 			for (Wireable wireable : mWireables) {
 				wireable.onDestroy();
 			}
 		}
 	}
-	
-	//-- inner classes
-	
-	static class Task implements Runnable {
-		
-		private static final TaskPool POOL = new TaskPool(QUEUE_SIZE);
-		
-		public static final int CODE_REGISTER = 0;
-		public static final int CODE_UNREGISTER = 1;
-		public static final int CODE_POST_EVENT = 2;
-		
-		public static final int RUNNABLE_REPOST_EVENT = 10;
-		public static final int RUNNABLE_DISPATCH_BACKGROUND_EVENT = 11;
-		
-		public Task prev;
-		public int code;
-		public Object obj;
-		
-		// runnable repost
-		public TinyBus bus;
-		
-		// runnable dispatch
-		public EventCallback eventCallback;
-		public WeakReference<Object> receiverRef;
-		
-		private Task() {}
-		
-		public static Task obtainTask(Object obj, int code) {
-			Task task;
-			synchronized (POOL) {
-				task = POOL.acquire();
-			}
-			task.code = code;
-			task.obj = obj;
-			task.prev = null;
-			return task;
-		}
-		
-		public void recycle() {
-			synchronized (POOL) {
-				POOL.release(this);
-			}
-		}
-
-		//-- handling repost event
-		
-		public Task setupRepostHandler(TinyBus bus) {
-			this.bus = bus;
-			return this;
-		}
-		
-		@Override
-		public void run() {
-			if (code != RUNNABLE_REPOST_EVENT) {
-				throw new IllegalStateException("Assertion. Expected task " 
-						+ RUNNABLE_REPOST_EVENT + " while received " + code);
-			}
-			code = CODE_POST_EVENT;
-			bus.mTaskQueue.offer(this);
-			bus.processQueue();
-			bus = null;
-		}
-		
-		//-- handling dispatch event
-		
-		public Task setupDispatchEventHandler(EventCallback eventCallback, Object receiver, Object event) {
-			this.eventCallback = eventCallback;
-			this.receiverRef = new WeakReference<Object>(receiver);
-			this.obj = event;
-			return this;
-		}
-		
-		public void dispatchInBackground() throws Exception {
-			if (code != RUNNABLE_DISPATCH_BACKGROUND_EVENT) {
-				throw new IllegalStateException("Assertion. Expected task " 
-						+ RUNNABLE_DISPATCH_BACKGROUND_EVENT + " while received " + code);
-			}
-			
-			final Object receiver = this.receiverRef.get();
-			if (receiver != null) {
-				eventCallback.method.invoke(receiver, obj);
-			}
-			
-			eventCallback = null;
-			receiverRef = null;
-			obj = null;
-		}
-		
-	}
-	
-	/**
-	 * Singly linked list used as a FIFO queue.
-	 * @author sergej
-	 */
-    static class TaskQueue {
-    	private Task head;
-    	private Task tail;
-    	
-    	public void offer(Task task) {
-    		if (tail == null) {
-    			tail = head = task;
-    		} else {
-    			tail.prev = task;
-    			tail = task;
-    		}
-    	}
-    	
-    	public Task poll() {
-    		if (head == null) {
-    			return null;
-    		} else {
-    			Task task = head;
-    			head = head.prev;
-    			if (head == null) tail = null;
-    			return task;
-    		}
-    	}
-    }
-	
-    // pool of tasks
-    static class TaskPool {
-    	private final int mMaxSize;
-    	private int mSize;
-    	private Task tail;
-    	
-    	public TaskPool(int maxSize) {
-    		mMaxSize = maxSize;
-    	}
-    	
-    	Task acquire() {
-    		Task acquired = tail;
-    		if (acquired == null) {
-    			acquired = new Task();
-    		} else {
-    			tail = acquired.prev;
-    			mSize--;
-    		}
-    		return acquired;
-    	}
-    	
-		void release(Task task) {
-			if (mSize < mMaxSize) {
-				task.prev = tail;
-				tail = task;
-				mSize++;
-			}
-		}
-    }
     
 }

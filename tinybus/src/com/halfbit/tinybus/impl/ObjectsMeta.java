@@ -1,4 +1,4 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -6,13 +6,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import com.halfbit.tinybus.Produce;
+import com.halfbit.tinybus.Subscribe;
 import com.halfbit.tinybus.Subscribe.Mode;
+import com.halfbit.tinybus.TinyBus;
 
-class ObjectMeta {
+public class ObjectsMeta {
 
 	//-- static classes
 	
-	static class EventCallback {
+	public static class EventCallback {
 		
 		public EventCallback(Method method, Subscribe ann) {
 			this.method = method;
@@ -32,7 +35,7 @@ class ObjectMeta {
 	private HashMap<Class<? extends Object>/*event class*/, Method> mProducerCallbacks
 		= new HashMap<Class<? extends Object>, Method>();
 	
-	public ObjectMeta(Object obj) {
+	public ObjectsMeta(Object obj) {
 		final Method[] methods = obj.getClass().getMethods();
 		
 		Class<?>[] params;
@@ -64,14 +67,14 @@ class ObjectMeta {
 	public void dispatchEvents(
 			Object obj,
 			HashMap<Class<? extends Object>, HashSet<Object>> receivers,
-			HashMap<Class<? extends Object>, ObjectMeta> metas,
+			HashMap<Class<? extends Object>, ObjectsMeta> metas,
 			TinyBus bus) throws Exception {
 		
 		Iterator<Entry<Class<? extends Object>, Method>> 
 			producerCallbacks = mProducerCallbacks.entrySet().iterator();
 
 		Object event;
-		ObjectMeta meta;
+		ObjectsMeta meta;
 		HashSet<Object> targetReceivers;
 		Class<? extends Object> eventClass;
 		Entry<Class<? extends Object>, Method> producerCallback;
@@ -97,14 +100,14 @@ class ObjectMeta {
 	public void dispatchEvents(
 			HashMap<Class<? extends Object>, Object> producers,
 			Object receiver,
-			HashMap<Class<? extends Object>, ObjectMeta> metas,
+			HashMap<Class<? extends Object>, ObjectsMeta> metas,
 			TinyBus bus) throws Exception {
 
 		Iterator<Class<? extends Object>> 
 			eventClasses = mEventCallbacks.keySet().iterator();
 		
 		Object event;
-		ObjectMeta meta;
+		ObjectsMeta meta;
 		Object producer;
 		Class<? extends Object> eventClass;
 		

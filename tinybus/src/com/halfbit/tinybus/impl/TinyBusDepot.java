@@ -1,4 +1,4 @@
-package com.halfbit.tinybus;
+package com.halfbit.tinybus.impl;
 
 import java.util.WeakHashMap;
 
@@ -10,7 +10,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.SparseArray;
 
-class TinyBusDepot implements ActivityLifecycleCallbacks {
+import com.halfbit.tinybus.TinyBus;
+
+public class TinyBusDepot implements ActivityLifecycleCallbacks {
 
 	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	private static final boolean DEBUG = false;
@@ -38,17 +40,17 @@ class TinyBusDepot implements ActivityLifecycleCallbacks {
 	private final SparseArray<TinyBus> mTransientBuses = new SparseArray<TinyBus>(3);
 	private int mNextTransientBusId;
 	
-	TinyBus createBusInContext(Context context) {
+	public TinyBus createBusInContext(Context context) {
 		final TinyBus bus = new TinyBus(context);
 		mBuses.put(context, bus);
 		return bus;
 	}
 	
-	TinyBus getBusInContext(Context context) {
+	public TinyBus getBusInContext(Context context) {
 		return mBuses.get(context);
 	}
 	
-	synchronized BackgroundDispatcher getBackgroundDispatcher() {
+	public synchronized BackgroundDispatcher getBackgroundDispatcher() {
 		if (mBackgroundDispatcher == null) {
 			mBackgroundDispatcher = new BackgroundDispatcher();
 		}

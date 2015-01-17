@@ -103,7 +103,7 @@ public interface Bus {
 	 * Checks whether given object is currently registered in the bus.
 	 * <p>In most cases, when you (un)register objects inside standard 
 	 * <code>onStart()</code> and <code>onStop()</code> lifecycle callbacks, 
-	 * you won't need this method at all. But in some more trickier
+	 * you don't need this method at all. But in some more trickier
 	 * cases, when you (un)register objects depending on some other 
 	 * conditions, this method can be very helpful.
 	 * 
