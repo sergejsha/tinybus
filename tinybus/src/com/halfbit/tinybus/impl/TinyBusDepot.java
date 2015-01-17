@@ -15,6 +15,7 @@ import com.halfbit.tinybus.TinyBus;
 public class TinyBusDepot implements ActivityLifecycleCallbacks {
 
 	public static interface LifecycleComponent {
+		void attachContext(Context context);
 		void onStart();
 		void onStop();
 		void onDestroy();
@@ -120,7 +121,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 				}
 				
 				mTransientBuses.delete(busId);
-				bus.assignContext(activity);
+				bus.getLifecycleComponent().attachContext(activity);
 				mBuses.put(activity, bus);
 				if (DEBUG) {
 					Log.d(TAG, " ### onCreated(), bus restored for " + activity + 

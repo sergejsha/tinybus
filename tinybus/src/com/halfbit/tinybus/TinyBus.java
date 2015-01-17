@@ -159,9 +159,10 @@ public class TinyBus implements Bus {
 	
 	public TinyBus(Context context) {
 		mImpl = new TinyBusImpl();
+		mImpl.attachContext(context);
+		
 		mTaskQueue = new TaskQueue();
 		mWorkerThread = Thread.currentThread();
-		assignContext(context);
 		
 		final Looper looper = Looper.myLooper();
 		mWorkerHandler = looper == null ? null : new Handler(looper);
@@ -375,14 +376,6 @@ public class TinyBus implements Bus {
 	
 	//-- package methods
 	
-	/**
-	 * We call this method when bus is transferred from 
-	 * one activity to another during configuration change. 
-	 */
-	public void assignContext(Context context) {
-		mContextRef = context == null ? null : new WeakReference<Context>(context);
-	}
-	
 	public LifecycleComponent getLifecycleComponent() {
 		return mImpl;
 	}
@@ -408,6 +401,18 @@ public class TinyBus implements Bus {
 			}
 		}
 
+		/**
+		 * This method gets called when bus is transferred from 
+		 * one activity to another during configuration change.
+		 * 
+		 * NOTE: Context instance can be null, thus bus can be 
+		 * in a state when there is no attached context. 
+		 */
+		@Override
+		public void attachContext(Context context) {
+			mContextRef = context == null ? null : new WeakReference<Context>(context);
+		}
+		
 		@Override
 		public void onStart() {
 			if (mWireables != null) {
