@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Sergej Shafarenka, halfbit.de
+ * Copyright (C) 2014, 2015 Sergej Shafarenka, halfbit.de
  * Copyright (C) 2012 Square, Inc.
  * Copyright (C) 2007 The Guava Authors
  *
