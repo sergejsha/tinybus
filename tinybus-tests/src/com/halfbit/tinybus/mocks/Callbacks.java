@@ -18,17 +18,24 @@ public abstract class Callbacks {
 		Assert.assertSame(null, mEvents.get(0));
 	}
 	
-	public void assertEventsList(ArrayList<Object> expectedEvents) {
+	public void assertSameEventsList(ArrayList<Object> expectedEvents) {
 		Assert.assertEquals(expectedEvents.size(), mEvents.size());
 		for(int i=0; i<expectedEvents.size(); i++) {
 			Assert.assertSame(expectedEvents.get(0), mEvents.get(0));
 		}
 	}
 	
-	public void assertEvents(Object... expectedEvents) {
+	public void assertSameEvents(Object... expectedEvents) {
 		Assert.assertEquals(expectedEvents.length, mEvents.size());
 		for(int i=0; i<expectedEvents.length; i++) {
 			Assert.assertSame(expectedEvents[i], mEvents.get(i));
+		}
+	}
+	
+	public void assertEqualEvents(Object... expectedEvents) {
+		Assert.assertEquals(expectedEvents.length, mEvents.size());
+		for(int i=0; i<expectedEvents.length; i++) {
+			Assert.assertEquals(expectedEvents[i], mEvents.get(i));
 		}
 	}
 	

@@ -44,8 +44,8 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		Event1 event = new Event1("event1");
 		bus.post(event);
 		
-		subscriber1.assertEvents(event);
-		subscriber2.assertEvents(event);
+		subscriber1.assertSameEvents(event);
+		subscriber2.assertSameEvents(event);
 	}
 
 	public void testUnregisterOneSubscriber() {
@@ -56,7 +56,7 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		Event1 event = new Event1("event1");
 		bus.post(event);
 		subscriber1.assertNoEvents();
-		subscriber2.assertEvents(event);
+		subscriber2.assertSameEvents(event);
 	}
 	
 	public void testUnregisterAllSubscribers() {
@@ -75,8 +75,8 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		bus.register(subscriber2);
 		bus.register(producer1);
 		
-		subscriber1.assertEvents(producer1.lastEvent);
-		subscriber2.assertEvents(producer1.lastEvent);
+		subscriber1.assertSameEvents(producer1.lastEvent);
+		subscriber2.assertSameEvents(producer1.lastEvent);
 	}
 	
 	public void testSingleProducerFirst() {
@@ -84,8 +84,8 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		bus.register(subscriber1);
 		bus.register(subscriber2);
 		
-		subscriber1.assertEvents(producer1.lastEvent);
-		subscriber2.assertEvents(producer1.lastEvent);
+		subscriber1.assertSameEvents(producer1.lastEvent);
+		subscriber2.assertSameEvents(producer1.lastEvent);
 	}
 	
 	public void testSubscribersFirstBeforeMultipleProducers() {
@@ -93,7 +93,7 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		bus.register(subscriber2);
 		bus.register(producer2);
 		
-		subscriber1.assertEvents(producer2.lastEvent1);
+		subscriber1.assertSameEvents(producer2.lastEvent1);
 		subscriber2.assertEventsAnyOrder(producer2.lastEvent1, producer2.lastEvent2);
 	}
 	
@@ -102,7 +102,7 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		bus.register(subscriber1);
 		bus.register(subscriber2);
 		
-		subscriber1.assertEvents(producer2.lastEvent1);
+		subscriber1.assertSameEvents(producer2.lastEvent1);
 		subscriber2.assertEventsAnyOrder(producer2.lastEvent1, producer2.lastEvent2);
 	}
 	
@@ -124,8 +124,8 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		bus.post(event5);
 		bus.post(event6);
 		
-		subscriber1.assertEvents(event1, event2, event5);
-		subscriber2.assertEvents(event1, event2, event3, event4, event5, event6);
+		subscriber1.assertSameEvents(event1, event2, event5);
+		subscriber2.assertSameEvents(event1, event2, event3, event4, event5, event6);
 	}
 
 	public void testMultipleEventsWithProducerBefore() {
@@ -147,8 +147,8 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 		bus.post(event5);
 		bus.post(event6);
 		
-		subscriber1.assertEvents(producer1.lastEvent, event1, event2, event5);
-		subscriber2.assertEvents(producer1.lastEvent, event1, event2, event3, event4, event5, event6);
+		subscriber1.assertSameEvents(producer1.lastEvent, event1, event2, event5);
+		subscriber2.assertSameEvents(producer1.lastEvent, event1, event2, event3, event4, event5, event6);
 	}
 	
 	public void testMultipleEventsWithProducerAfter() {
@@ -171,8 +171,8 @@ public class ManySubscribersManyProducerManyEventsTest extends TestCase {
 
 		bus.register(producer1);
 		
-		subscriber1.assertEvents(event1, event2, event5, producer1.lastEvent);
-		subscriber2.assertEvents(event1, event2, event3, event4, event5, event6, producer1.lastEvent);
+		subscriber1.assertSameEvents(event1, event2, event5, producer1.lastEvent);
+		subscriber2.assertSameEvents(event1, event2, event3, event4, event5, event6, producer1.lastEvent);
 	}
 	
 }

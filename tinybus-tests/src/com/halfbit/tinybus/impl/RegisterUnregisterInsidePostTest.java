@@ -151,9 +151,9 @@ public class RegisterUnregisterInsidePostTest extends TestCase {
 		bus.post(event2);
 		bus.post(event3);
 		
-		listeningSubscriber1.assertEvents(event1, event2, event3);
-		selfUnregisteringSubscriber.assertEvents(event1);
-		listeningSubscriber1.assertEvents(event1, event2, event3);
+		listeningSubscriber1.assertSameEvents(event1, event2, event3);
+		selfUnregisteringSubscriber.assertSameEvents(event1);
+		listeningSubscriber1.assertSameEvents(event1, event2, event3);
 	}
 	
 	public void testUnregisterProducerInsidePost() {
@@ -170,9 +170,9 @@ public class RegisterUnregisterInsidePostTest extends TestCase {
 		bus.register(listeningSubscriber2);
 		bus.post(event3);
 		
-		listeningSubscriber1.assertEvents(selfUnregisteringProducer.lastEvent, event1, event2, event3);
-		selfUnregisteringProducer.assertEvents(event2);
-		listeningSubscriber2.assertEvents(event3);
+		listeningSubscriber1.assertSameEvents(selfUnregisteringProducer.lastEvent, event1, event2, event3);
+		selfUnregisteringProducer.assertSameEvents(event2);
+		listeningSubscriber2.assertSameEvents(event3);
 	}
 	
 	public void testRegisterSubscriber() {
@@ -188,11 +188,11 @@ public class RegisterUnregisterInsidePostTest extends TestCase {
 		bus.post(event2);
 		bus.post(event3);
 		
-		listeningSubscriber1.assertEvents(event1, dynamicProducer.lastEvent, event2, event3);
-		registeringSubscriber.assertEvents(event1, dynamicProducer.lastEvent, event2, event3);
+		listeningSubscriber1.assertSameEvents(event1, dynamicProducer.lastEvent, event2, event3);
+		registeringSubscriber.assertSameEvents(event1, dynamicProducer.lastEvent, event2, event3);
 		dynamicProducer.assertNoEvents();
-		dynamicSubscriber.assertEvents(dynamicProducer.lastEvent, event3);
-		listeningSubscriber2.assertEvents(event1, dynamicProducer.lastEvent, event2, event3);
+		dynamicSubscriber.assertSameEvents(dynamicProducer.lastEvent, event3);
+		listeningSubscriber2.assertSameEvents(event1, dynamicProducer.lastEvent, event2, event3);
 	}
 	
 }

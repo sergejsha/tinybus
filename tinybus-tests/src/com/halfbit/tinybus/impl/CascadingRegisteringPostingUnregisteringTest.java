@@ -122,10 +122,10 @@ public class CascadingRegisteringPostingUnregisteringTest extends TestCase {
 		Object event2 = new Object();
 		bus.post(event2);
 		
-		listeningSubscriber1.assertEvents(event1, dynamicProducer.event, registrator.event, event2);
-		registrator.assertEvents(event1, dynamicProducer.event, registrator.event);
+		listeningSubscriber1.assertSameEvents(event1, dynamicProducer.event, registrator.event, event2);
+		registrator.assertSameEvents(event1, dynamicProducer.event, registrator.event);
 		dynamicProducer.assertNoEvents();
-		dynamicSubscriber.assertEvents(dynamicProducer.event, event2);
-		listeningSubscriber2.assertEvents(event1, dynamicProducer.event, registrator.event, event2);
+		dynamicSubscriber.assertSameEvents(dynamicProducer.event, event2);
+		listeningSubscriber2.assertSameEvents(event1, dynamicProducer.event, registrator.event, event2);
 	}
 }

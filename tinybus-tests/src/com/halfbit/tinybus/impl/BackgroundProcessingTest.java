@@ -15,7 +15,7 @@ import com.halfbit.tinybus.mocks.Callbacks;
 import com.halfbit.tinybus.mocks.Event1;
 import com.halfbit.tinybus.mocks.Event2;
 
-public class MultithreadedTinyBusTest extends InstrumentationTestCase {
+public class BackgroundProcessingTest extends InstrumentationTestCase {
 
 	private Bus bus;
 	private String stringResult;
@@ -181,7 +181,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		latch.await(3, TimeUnit.SECONDS);
 		
 		assertEquals(5, callback.getEventsCount());
-		callback.assertEvents(event1, event2, event3, event4, eventX);
+		callback.assertSameEvents(event1, event2, event3, event4, eventX);
 		
 	}
 
@@ -213,7 +213,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		latch.await(4, TimeUnit.SECONDS);
 		
 		assertEquals(eventCount, callback.getEventsCount());
-		callback.assertEvents(sentEvents);
+		callback.assertSameEvents(sentEvents);
 		
 	}
 	
@@ -269,7 +269,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		
 		// because of async delivery we cannot guaranty event sequence
 		callback1.assertEventsAnyOrder(event1, producerEvent, event2, event3, producerEvent);
-		producer.assertEvents(event2);
+		producer.assertSameEvents(event2);
 	}
 	
 	@UiThreadTest
@@ -291,7 +291,7 @@ public class MultithreadedTinyBusTest extends InstrumentationTestCase {
 		bus.post("event");
 		latch.await(3, TimeUnit.SECONDS);
 		
-		subscriber.assertEvents("event", bus);
+		subscriber.assertSameEvents("event", bus);
 	}
 	
 	@UiThreadTest

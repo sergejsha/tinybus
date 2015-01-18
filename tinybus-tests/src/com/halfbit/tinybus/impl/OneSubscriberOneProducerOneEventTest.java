@@ -37,7 +37,7 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 		bus.register(subscriber);
 		
 		bus.post(event = new Event1("event1"));
-		subscriber.assertEvents(event);
+		subscriber.assertSameEvents(event);
 	}
 	
 	public void testSingleSubscriberManyEvents() {
@@ -50,7 +50,7 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 			bus.post(event = new Event1("event1"));
 			events.add(event);
 		}
-		subscriber.assertEventsList(events);
+		subscriber.assertSameEventsList(events);
 	}
 	
 	public void testUnregisterSubscriber() {
@@ -66,13 +66,13 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 	public void testSubscriberFirst() {
 		bus.register(subscriber);
 		bus.register(producer);
-		subscriber.assertEvents(producer.lastEvent);
+		subscriber.assertSameEvents(producer.lastEvent);
 	}
 	
 	public void testProducerFirst() {
 		bus.register(producer);
 		bus.register(subscriber);
-		subscriber.assertEvents(producer.lastEvent);
+		subscriber.assertSameEvents(producer.lastEvent);
 	}
 	
 	public void testUnregisterProducer() {
@@ -111,7 +111,7 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 		bus.post(event = new Event1("second"));
 		events.add(event);
 		
-		subscriber.assertEventsList(events);
+		subscriber.assertSameEventsList(events);
 	}
 	
 }

@@ -1,17 +1,20 @@
 package com.halfbit.tinybus.impl;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import android.os.SystemClock;
 import android.test.InstrumentationTestCase;
 import android.test.UiThreadTest;
 
 import com.halfbit.tinybus.Subscribe;
 import com.halfbit.tinybus.Subscribe.Mode;
 import com.halfbit.tinybus.TinyBus;
+import com.halfbit.tinybus.mocks.Callbacks;
 
-public class TinyBusWithBackgroundQueuesTest extends InstrumentationTestCase {
+public class BackgroundQueuesTest extends InstrumentationTestCase {
 
 	ArrayList<CallbackResult> results;
 	
@@ -50,9 +53,97 @@ public class TinyBusWithBackgroundQueuesTest extends InstrumentationTestCase {
 	}
 	
 	@UiThreadTest
+	public void testSerialQueueExecution() throws Exception {
+		
+		final int numberOfEvents = 25;
+		final TinyBus bus = TinyBus.from(getInstrumentation().getContext());
+		final CountDownLatch latch = new CountDownLatch(numberOfEvents);
+
+		Callbacks callbacks = new Callbacks() {
+			
+			@Subscribe(mode=Mode.Background, queue="test")
+			public void onEvent(String event) {
+				onCallback(event);
+				latch.countDown();
+				
+				long timeout = (long) (2l * Math.random());
+				if (timeout > 0l) {
+					SystemClock.sleep(timeout);
+				}
+			}
+		};
+		
+		bus.register(callbacks);
+		
+		ArrayList<Object> expected = new ArrayList<Object>();
+		for(int i=0; i<numberOfEvents; i++) {
+			String event = "event" + i; 
+			bus.post(event);
+			expected.add(event);
+		}
+		
+		latch.await(10, TimeUnit.SECONDS);
+		
+		callbacks.assertSameEventsList(expected);
+	}
+	
+	public void testNoneBlockingQueues() throws Exception {
+		
+		final TinyBus bus = TinyBus.from(getInstrumentation().getContext());
+		
+		final CountDownLatch latch = new CountDownLatch(200);
+		final CountDownLatch blockingLatch = new CountDownLatch(100);
+
+		final Callbacks fluentCallback = new Callbacks() {
+			@Subscribe(mode=Mode.Background, queue="fluent")
+			public void onEvent(String event) {
+				onCallback(event);
+				latch.countDown();
+				blockingLatch.countDown();
+				System.out.println("### fluent, " + event);
+			}
+		};
+
+		Callbacks blockingCallback = new Callbacks() {
+			
+			@Subscribe(mode=Mode.Background, queue="block")
+			public void onEvent(String event) throws InterruptedException {
+				System.out.println("### blocking, " + event);
+				
+				// block on first event
+				if (getEventsCount() == 0) {
+					blockingLatch.await(3, TimeUnit.SECONDS);
+				}
+
+				// process, if fluent callback is completed only 
+				if (fluentCallback.getEventsCount() == 100) {
+					onCallback(event);
+					latch.countDown();
+				}
+			}
+		};
+		
+		bus.register(blockingCallback);
+		bus.register(fluentCallback);
+		
+		ArrayList<Object> expected = new ArrayList<Object>();
+		for(int i=0; i<100; i++) {
+			String event = "event" + i; 
+			bus.post(event);
+			expected.add(event);
+		}
+		
+		latch.await(3, TimeUnit.SECONDS);
+		
+		fluentCallback.assertSameEventsList(expected);
+		blockingCallback.assertSameEventsList(expected);
+		
+	}
+	
+	@UiThreadTest
 	public void testPostSingleEventToSingleQueue() throws Exception {
 		
-		TinyBus bus = TinyBus.from(getInstrumentation().getContext());
+		final TinyBus bus = TinyBus.from(getInstrumentation().getContext());
 		final CountDownLatch latch = new CountDownLatch(1);
 		bus.register(new Object() {
 			@Subscribe(mode = Mode.Background)
@@ -146,18 +237,20 @@ public class TinyBusWithBackgroundQueuesTest extends InstrumentationTestCase {
 		final TinyBus bus = TinyBus.from(getInstrumentation().getContext());
 		final CountDownLatch latch = new CountDownLatch(numberOfEvents);
 		
-		bus.register(new Object() {
+		Callbacks callbacks1, callbacks2;
+		
+		bus.register(callbacks1 = new Callbacks() {
 			@Subscribe(mode = Mode.Background, queue="queue1")
 			public void onEvent(String event) {
-				collectEvent(event + "0");
+				onCallback(event + "0");
 				latch.countDown();
 			}
 		});
 		
-		bus.register(new Object() {
+		bus.register(callbacks2 = new Callbacks() {
 			@Subscribe(mode = Mode.Background, queue="queue1")
 			public void onEvent(String event) {
-				collectEvent(event + "1");
+				onCallback(event + "1");
 				latch.countDown();
 			}
 		});
@@ -165,14 +258,8 @@ public class TinyBusWithBackgroundQueuesTest extends InstrumentationTestCase {
 		bus.post("event");
 		latch.await(3, TimeUnit.SECONDS);
 
-		
-		assertEventsNumber(2);
-		ArrayList<String> eventsReduceList = new ArrayList<String>();
-		eventsReduceList.add("event0");
-		eventsReduceList.add("event1");
-		eventsReduceList.remove(results.get(0).event);
-		eventsReduceList.remove(results.get(1).event);
-		assertEquals(0, eventsReduceList.size());
+		callbacks1.assertEqualEvents("event0");
+		callbacks2.assertEqualEvents("event1");
 	}
 	
 	@UiThreadTest

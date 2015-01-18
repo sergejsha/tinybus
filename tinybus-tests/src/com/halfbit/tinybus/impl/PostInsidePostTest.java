@@ -99,10 +99,10 @@ public class PostInsidePostTest extends TestCase {
 		bus.post(event1);
 		bus.post(event2);
 		
-		subscriberPostingDifferentEvent.assertEvents(event1, 
+		subscriberPostingDifferentEvent.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, event2);
 		
-		listeningSubscriber.assertEvents(event1, 
+		listeningSubscriber.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, event2);
 	}
 
@@ -116,10 +116,10 @@ public class PostInsidePostTest extends TestCase {
 		bus.post(event1);
 		bus.post(event2);
 		
-		subscriberPostingDifferentEvent.assertEvents(event1, 
+		subscriberPostingDifferentEvent.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, event2);
 		
-		listeningSubscriber.assertEvents(event1, 
+		listeningSubscriber.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, event2);
 	}
 	
@@ -135,11 +135,11 @@ public class PostInsidePostTest extends TestCase {
 		bus.post(event1);
 		bus.post(event2);
 		
-		subscriberPostingDifferentEvent.assertEvents(event1, 
+		subscriberPostingDifferentEvent.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, 
 				subscriberPostingDifferentEvent.sentEvent2, event2);
 		
-		listeningSubscriber.assertEvents(event1, 
+		listeningSubscriber.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, 
 				subscriberPostingDifferentEvent.sentEvent2, event2);
 	}
@@ -156,11 +156,11 @@ public class PostInsidePostTest extends TestCase {
 		bus.post(event1);
 		bus.post(event2);
 		
-		subscriberPostingDifferentEvent.assertEvents(event1, 
+		subscriberPostingDifferentEvent.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, 
 				subscriberPostingDifferentEvent.sentEvent2, event2);
 		
-		listeningSubscriber.assertEvents(event1, 
+		listeningSubscriber.assertSameEvents(event1, 
 				subscriberPostingDifferentEvent.sentEvent, 
 				subscriberPostingDifferentEvent.sentEvent2, event2);
 	}
@@ -173,14 +173,14 @@ public class PostInsidePostTest extends TestCase {
 		Event1 event1 = new Event1("event1");
 		bus.post(event1);
 	
-		subscriberPostingSameEvent.assertEvents(event1,
+		subscriberPostingSameEvent.assertSameEvents(event1,
 				subscriberPostingSameEvent.sentEvent[0],
 				subscriberPostingSameEvent.sentEvent[1],
 				subscriberPostingSameEvent.sentEvent[2],
 				subscriberPostingSameEvent.sentEvent[3],
 				subscriberPostingSameEvent.sentEvent[4]);
 		
-		listeningSubscriber.assertEvents(event1,
+		listeningSubscriber.assertSameEvents(event1,
 				subscriberPostingSameEvent.sentEvent[0],
 				subscriberPostingSameEvent.sentEvent[1],
 				subscriberPostingSameEvent.sentEvent[2],

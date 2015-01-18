@@ -39,11 +39,11 @@ public class MixedProducersAndSubscribersTest extends TestCase {
 
 		Event1 event1 = new Event1("event1");
 		bus.post(event1);
-		producer3.assertEvents(event1);
+		producer3.assertSameEvents(event1);
 		
 		Event3 event2 = new Event3("event3", 1);
 		bus.post(event2);
-		producer3.assertEvents(event1);
+		producer3.assertSameEvents(event1);
 		
 	}
 
@@ -52,11 +52,11 @@ public class MixedProducersAndSubscribersTest extends TestCase {
 
 		Event1 event1 = new Event1("event1");
 		bus.post(event1);
-		producer3.assertEvents(event1);
+		producer3.assertSameEvents(event1);
 		
 		bus.unregister(producer3);
 		bus.post(event1);
-		producer3.assertEvents(event1);
+		producer3.assertSameEvents(event1);
 	}
 
 	public void testRegisterMultipleMixedProducerSubscribers() {
@@ -75,7 +75,7 @@ public class MixedProducersAndSubscribersTest extends TestCase {
 		bus.post(event3);
 		bus.post(event4);
 		
-		producer3.assertEvents(producer1.lastEvent, event1, event4);
+		producer3.assertSameEvents(producer1.lastEvent, event1, event4);
 		subscriber2.assertEventsAnyOrder(producer1.lastEvent, producer3.lastEvent,
 				event1, event2, event3, event4);
 	}
@@ -101,7 +101,7 @@ public class MixedProducersAndSubscribersTest extends TestCase {
 		bus.post(event3);
 		bus.post(event4);
 
-		producer3.assertEvents(producer1.lastEvent);
+		producer3.assertSameEvents(producer1.lastEvent);
 		subscriber2.assertEventsAnyOrder(producer1.lastEvent, producer3.lastEvent, event1, event2);
 	}
 }
