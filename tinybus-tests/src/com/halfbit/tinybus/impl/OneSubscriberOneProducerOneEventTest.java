@@ -98,8 +98,8 @@ public class OneSubscriberOneProducerOneEventTest extends TestCase {
 	
 	public void testPostEventWithProducer() {
 		
-		System.out.println("Current: " + Thread.currentThread());
-		System.out.println("Looper: " + Looper.getMainLooper().getThread());
+		//System.out.println("Current: " + Thread.currentThread());
+		//System.out.println("Looper: " + Looper.getMainLooper().getThread());
 		
 		bus.register(producer);
 		bus.register(subscriber);

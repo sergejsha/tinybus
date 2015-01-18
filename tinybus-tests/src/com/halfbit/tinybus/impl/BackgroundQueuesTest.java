@@ -100,7 +100,6 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 				onCallback(event);
 				latch.countDown();
 				blockingLatch.countDown();
-				System.out.println("### fluent, " + event);
 			}
 		};
 
@@ -108,7 +107,6 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			
 			@Subscribe(mode=Mode.Background, queue="block")
 			public void onEvent(String event) throws InterruptedException {
-				System.out.println("### blocking, " + event);
 				
 				// block on first event
 				if (getEventsCount() == 0) {

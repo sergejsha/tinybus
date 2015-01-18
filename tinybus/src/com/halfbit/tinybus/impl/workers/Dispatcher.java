@@ -97,7 +97,6 @@ public class Dispatcher {
 	}
 	
 	void handlerDestroy() {
-		System.out.println(" *** destroy dispatcher");
 		mThreadPool.destroy();
 	}
 	
