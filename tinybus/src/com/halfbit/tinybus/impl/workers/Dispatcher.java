@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2015 Sergej Shafarenka, halfbit.de
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.halfbit.tinybus.impl.workers;
 
 import java.lang.ref.WeakReference;
@@ -11,8 +26,15 @@ import android.os.Message;
 
 import com.halfbit.tinybus.TinyBus;
 import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
+import com.halfbit.tinybus.impl.Task.TaskQueue;
 import com.halfbit.tinybus.impl.Task;
 
+/**
+ * This class dispatches and manages <code>Task</code> to be 
+ * processed in background.
+ *  
+ * @author sergej
+ */
 public class Dispatcher {
 
 	// context
@@ -26,9 +48,6 @@ public class Dispatcher {
 	// state
 	private Task mReservedTask;	
 	
-	/**
-	 * Dispatcher TODO
-	 */
 	public Dispatcher() {
 		HandlerThread thread = new HandlerThread("tinybus-dispatcher");
 		thread.start();
@@ -182,4 +201,46 @@ public class Dispatcher {
 		}
 	}
 
+	//-- inner classes
+	
+	static class SerialTaskQueue extends TaskQueue {
+
+		private final String mQueueName;
+		
+		private boolean mHasTaskInProcess;
+		private int mSize;
+		
+		public SerialTaskQueue(String queueName) {
+			mQueueName = queueName;
+		}
+		
+		public String getQueueName() {
+			return mQueueName;
+		}
+		
+		public void setHasTaskInProcess(boolean hasTaskInProcess) {
+			mHasTaskInProcess = hasTaskInProcess;
+		}
+		
+		public boolean hasTaskInProcess() {
+			return mHasTaskInProcess;
+		}
+		
+		@Override
+		public void offer(Task task) {
+			super.offer(task);
+			mSize++;
+		}
+		
+		@Override
+		public Task poll() {
+			mSize--;
+			return super.poll();
+		}
+		
+		public int getSize() {
+			return mSize;
+		}
+	}
+	
 }
