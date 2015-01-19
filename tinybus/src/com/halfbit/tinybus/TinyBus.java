@@ -215,8 +215,10 @@ public class TinyBus implements Bus {
 						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
 			}
 			
-			mWorkerHandler.post(Task.obtainTask(this, Task.BACKGROUND_DISPATCH_FROM_BACKGROUND, event)
-					.setupRepostHandler(this));
+			if (mWorkerHandler.getLooper().getThread().isAlive()) {
+				mWorkerHandler.post(Task.obtainTask(this, Task.BACKGROUND_DISPATCH_FROM_BACKGROUND, event)
+						.setupRepostHandler(this));
+			}
 		}
 	}
 	
