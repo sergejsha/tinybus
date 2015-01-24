@@ -35,11 +35,11 @@ bus.post(new LoadingEvent());
 ```
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
 
-Performance comparison tests
+Performance reference tests
 =======
 ![tinybus][3]
 
-Executed on Galaxy Nexus device with Android 4.3 (Dalvik) with switched off screen.
+Executed on Nexus 5 device with Android 5.0.2 (ART) with screen switched off.
 
 TinyBus
 =======
