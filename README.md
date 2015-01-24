@@ -2,6 +2,11 @@
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
 
+Version 3.0 (work in progress)
+=======
+  - [x] Background processing queues
+  - [ ] Post delayed events
+
 TinyBus is
 =======
  - tiny (~ 17K jar)
@@ -39,7 +44,7 @@ Performance reference tests
 =======
 ![tinybus][3]
 
-Executed on Nexus 5 device with Android 5.0.2 (ART) with screen switched off.
+Executed on Nexus 5 device (Android 5.0.2, ART, screen off).
 
 TinyBus
 =======
