@@ -59,7 +59,9 @@ public class TinyBusPerformanceTest extends TestCase {
 		super.setUp();
 		
 		mTinyBus = new TinyBus();
-		mEventBus = new EventBus();
+		mEventBus = EventBus.builder()
+				.eventInheritance(false)
+				.sendNoSubscriberEvent(false).build();
 		mOttoBus = new com.squareup.otto.Bus(new com.squareup.otto.ThreadEnforcer() {
 			public void enforce(com.squareup.otto.Bus bus) {}
 		});
