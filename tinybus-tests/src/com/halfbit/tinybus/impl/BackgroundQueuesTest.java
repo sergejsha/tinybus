@@ -1,10 +1,10 @@
 package com.halfbit.tinybus.impl;
 
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import android.content.Context;
 import android.os.SystemClock;
 import android.test.InstrumentationTestCase;
 import android.test.UiThreadTest;
@@ -16,6 +16,8 @@ import com.halfbit.tinybus.mocks.Callbacks;
 
 public class BackgroundQueuesTest extends InstrumentationTestCase {
 
+	private static final int TEST_TIMEOUT = 4;
+	
 	ArrayList<CallbackResult> results;
 	
 	static class CallbackResult {
@@ -23,7 +25,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		public String threadName;
 	}
 	
-	void collectEvent(String event) {
+	synchronized void collectEvent(String event) {
 		CallbackResult result = new CallbackResult();
 		result.event = event;
 		result.threadName = Thread.currentThread().getName();
@@ -42,13 +44,19 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		results = new ArrayList<CallbackResult>();
 		super.setUp();
+		results = new ArrayList<CallbackResult>();
 	}
+	
 	
 	@Override
 	protected void tearDown() throws Exception {
-		TinyBusDepot.get(getInstrumentation().getContext()).testDestroy();
+		// destroy cached bus, that we can create buses in different threads
+		Context context = getInstrumentation().getContext(); 
+		TinyBusDepot depot = TinyBusDepot.get(context);
+		depot.onContextStopped(context);
+		depot.onContextDestroyed(context);
+		
 		super.tearDown();
 	}
 	
@@ -82,13 +90,14 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			expected.add(event);
 		}
 		
-		latch.await(10, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		callbacks.assertSameEventsList(expected);
 	}
 	
 	public void testNoneBlockingQueues() throws Exception {
 		
+		final Object lock = new Object();
 		final TinyBus bus = TinyBus.from(getInstrumentation().getContext());
 		
 		final CountDownLatch latch = new CountDownLatch(200);
@@ -98,7 +107,9 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			@Subscribe(mode=Mode.Background, queue="fluent")
 			public void onEvent(String event) {
 				onCallback(event);
-				latch.countDown();
+				synchronized (lock) {
+					latch.countDown();
+				}
 				blockingLatch.countDown();
 			}
 		};
@@ -116,7 +127,9 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 				// process, if fluent callback is completed only 
 				if (fluentCallback.getEventsCount() == 100) {
 					onCallback(event);
-					latch.countDown();
+					synchronized (lock) {
+						latch.countDown();
+					}
 				}
 			}
 		};
@@ -131,7 +144,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			expected.add(event);
 		}
 		
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		fluentCallback.assertSameEventsList(expected);
 		blockingCallback.assertSameEventsList(expected);
@@ -152,7 +165,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		});
 		
 		bus.post("event a");
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		assertEventsNumber(1);
 		assertResult(0, "event a", "tinybus-worker-0");
@@ -214,7 +227,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		});
 		
 		bus.post("event");
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		ArrayList<String> eventsReduceList = new ArrayList<String>();
 		for(int i=0; i<numberOfQueues; i++) {
@@ -254,7 +267,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		});
 		
 		bus.post("event");
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 
 		callbacks1.assertEqualEvents("event0");
 		callbacks2.assertEqualEvents("event1");
@@ -278,7 +291,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		for(int i=0; i<numberOfEvents; i++) {
 			bus.post("event_" + i);
 		}
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		assertEventsNumber(numberOfEvents);
 		for(int i=0; i<numberOfEvents; i++) {
@@ -292,6 +305,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		final int numberOfQueues = 5;
 		final int numberOfEvents = 20;
 		
+		final Object lock = new Object();
 		final TinyBus bus = TinyBus.from(getInstrumentation().getContext());
 		final CountDownLatch latch = new CountDownLatch(numberOfQueues * numberOfEvents);
 		
@@ -299,7 +313,9 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			@Subscribe(mode = Mode.Background, queue="queue0")
 			public void onEvent(String event) {
 				collectEvent(event + "0");
-				latch.countDown();
+				synchronized (lock) {
+					latch.countDown();
+				}
 			}
 		});
 		
@@ -307,7 +323,9 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			@Subscribe(mode = Mode.Background, queue="queue1")
 			public void onEvent(String event) {
 				collectEvent(event + "1");
-				latch.countDown();
+				synchronized (lock) {
+					latch.countDown();
+				}
 			}
 		});
 		
@@ -315,7 +333,9 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			@Subscribe(mode = Mode.Background, queue="queue2")
 			public void onEvent(String event) {
 				collectEvent(event + "2");
-				latch.countDown();
+				synchronized (lock) {
+					latch.countDown();
+				}
 			}
 		});
 		
@@ -323,7 +343,9 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			@Subscribe(mode = Mode.Background, queue="queue3")
 			public void onEvent(String event) {
 				collectEvent(event + "3");
-				latch.countDown();
+				synchronized (lock) {
+					latch.countDown();
+				}
 			}
 		});
 		
@@ -331,14 +353,16 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 			@Subscribe(mode = Mode.Background, queue="queue4")
 			public void onEvent(String event) {
 				collectEvent(event + "4");
-				latch.countDown();
+				synchronized (lock) {
+					latch.countDown();
+				}
 			}
 		});
 		
 		for (int i=0; i<numberOfEvents; i++) {
 			bus.post("event" + i);
 		}
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		assertEventsNumber(numberOfQueues * numberOfEvents);
 		ArrayList<String> eventsReduceList = new ArrayList<String>();

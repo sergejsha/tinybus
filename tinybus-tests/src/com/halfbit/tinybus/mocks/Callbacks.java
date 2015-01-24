@@ -9,8 +9,16 @@ public abstract class Callbacks {
 
 	private final ArrayList<Object> mEvents = new ArrayList<Object>();
 	
-	protected void onCallback(Object event) {
+	protected synchronized void onCallback(Object event) {
 		mEvents.add(event);
+	}
+	
+	public synchronized void clearEvents() {
+		mEvents.clear();
+	}
+	
+	public synchronized int getEventsCount() {
+		return mEvents.size();
 	}
 	
 	public void assertNullEvent() {
@@ -51,14 +59,6 @@ public abstract class Callbacks {
 	
 	public void assertNoEvents() {
 		Assert.assertEquals(0, mEvents.size());
-	}
-	
-	public void clearEvents() {
-		mEvents.clear();
-	}
-	
-	public int getEventsCount() {
-		return mEvents.size();
 	}
 	
 }

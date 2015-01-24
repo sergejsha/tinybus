@@ -33,7 +33,7 @@ import com.halfbit.tinybus.impl.ObjectsMeta;
 import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
 import com.halfbit.tinybus.impl.ObjectsMeta.EventDispatchCallback;
 import com.halfbit.tinybus.impl.Task;
-import com.halfbit.tinybus.impl.Task.TaskQueue;
+import com.halfbit.tinybus.impl.TaskQueue;
 import com.halfbit.tinybus.impl.TinyBusDepot;
 import com.halfbit.tinybus.impl.TinyBusDepot.LifecycleComponent;
 
@@ -129,26 +129,27 @@ public class TinyBus implements Bus {
 	
 	private static final String TAG = "tinybus";
 	
-	// callback's (receivers and/or producers) meta
-	private static final HashMap<Class<?>, ObjectsMeta> OBJECTS_META 
+	// subscribers and producers methods for a class
+	private static final HashMap<Class<?>, ObjectsMeta> OBJECTS_METAS 
 		= new HashMap<Class<?>, ObjectsMeta>();
 	
-	// event class to receiver objects map 
-	private final HashMap<Class<?>, HashSet<Object>> mEventReceivers
+	// subscribers for certain event type
+	private final HashMap<Class<?>, HashSet<Object>> mEventSubscribers
 		= new HashMap<Class<?>, HashSet<Object>>();
 	
-	// event class to producer object map
+	// producers for certain event type
 	private final HashMap<Class<?>, Object> mEventProducers 
 		= new HashMap<Class<?>, Object>(); 
 	
+	// context
 	private final TinyBusImpl mImpl;
-	private final TaskQueue mTaskQueue;
 	private final Handler mWorkerHandler;
 	private final Thread mWorkerThread;
 
+	// state
+	private final TaskQueue mTaskQueue;
 	private boolean mProcessing;
 	
-	WeakReference<Context> mContextRef;
 	ArrayList<Wireable> mWireables;
 	
 	//-- public api
@@ -170,54 +171,45 @@ public class TinyBus implements Bus {
 	
 	@Override
 	public void register(Object obj) {
-		if (obj == null) throw new NullPointerException("Object must not be null");
-		assertWorkerThread();
-		
+		assertObjectAndWorkerThread(obj);
 		mTaskQueue.offer(Task.obtainTask(this, Task.CODE_REGISTER, obj));
 		if (!mProcessing) processQueue();
 	}
 
 	@Override
 	public void unregister(Object obj) {
-		if (obj == null) throw new NullPointerException("Object must not be null");
-		assertWorkerThread();
-		
+		assertObjectAndWorkerThread(obj);
 		mTaskQueue.offer(Task.obtainTask(this, Task.CODE_UNREGISTER, obj));
 		if (!mProcessing) processQueue();
 	}
 
 	@Override
 	public boolean hasRegistered(Object obj) {
-		if (obj == null) throw new NullPointerException("Object must not be null");
-		assertWorkerThread();
-		
-		ObjectsMeta meta = OBJECTS_META.get(obj.getClass());
-		return meta != null && meta.hasRegisteredObject(obj, mEventReceivers, mEventProducers); 
+		assertObjectAndWorkerThread(obj);
+		ObjectsMeta meta = OBJECTS_METAS.get(obj.getClass());
+		return meta != null && meta.hasRegisteredObject(obj, mEventSubscribers, mEventProducers);
 	}
 	
 	@Override
 	public void post(Object event) {
-		if (event == null) throw new NullPointerException("Event must not be null");
+		if (event == null) {
+			throw new NullPointerException("Event must not be null");
+		}
 		
 		if (mWorkerThread == Thread.currentThread()) {
-			
-			// we post a Task instance when dispatching from a background thread
-			Task task = event instanceof Task ? (Task) event 
-					: Task.obtainTask(this, Task.CODE_POST_EVENT, event);
-					
+			Task task = Task.obtainTask(this, Task.CODE_POST_EVENT, event);
 			mTaskQueue.offer(task);
 			if (!mProcessing) processQueue();
 			
 		} else {
 			if (mWorkerHandler == null) {
-				throw new IllegalStateException("You can only call post() from a different "
+				throw new IllegalStateException("You can only call post() from a background "
 						+ "thread, if the thread, in which TinyBus was created, had a Looper. "
 						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
 			}
 			
 			if (mWorkerHandler.getLooper().getThread().isAlive()) {
-				mWorkerHandler.post(Task.obtainTask(this, Task.BACKGROUND_DISPATCH_FROM_BACKGROUND, event)
-						.setupRepostHandler(this));
+				mWorkerHandler.post(Task.obtainTask(this, Task.BACKGROUND_DISPATCH_FROM_BACKGROUND, event));
 			}
 		}
 	}
@@ -225,8 +217,8 @@ public class TinyBus implements Bus {
 	//-- wireable implementation
 	
 	public TinyBus wire(Wireable wireable) {
-		assertWorkerThread();
-		Context context = getNotNullContext();
+		assertObjectAndWorkerThread(wireable);
+		Context context = mImpl.getNotNullContext();
 
 		if (mWireables == null) {
 			mWireables = new ArrayList<Wireable>();
@@ -245,8 +237,8 @@ public class TinyBus implements Bus {
 
 	@SuppressWarnings("unchecked")
 	public <T extends Wireable> T unwire(Class<T> wireClass) {
-		assertWorkerThread();
-		Context context = getNotNullContext();
+		assertObjectAndWorkerThread(wireClass);
+		Context context = mImpl.getNotNullContext();
 		
 		Wireable wireable = getWireable(wireClass);
 		if (wireable != null) {
@@ -278,18 +270,10 @@ public class TinyBus implements Bus {
 		return null;
 	}
 	
-	//-- private methods
-	
-	private Context getNotNullContext() {
-		Context context = mContextRef == null ? null : mContextRef.get();
-		if (context == null) {
-			throw new IllegalStateException(
-				"You must create bus with TinyBus.from() method to use this function.");
+	private void assertObjectAndWorkerThread(Object obj) {
+		if (obj == null) {
+			throw new NullPointerException("Object must not be null");
 		}
-		return context;
-	}
-	
-	private void assertWorkerThread() {
 		if (mWorkerThread != Thread.currentThread()) {
 			throw new IllegalStateException("You must call this method from the same thread, "
 					+ "in which TinyBus was created. Created: " + mWorkerThread 
@@ -301,7 +285,6 @@ public class TinyBus implements Bus {
 		if (e instanceof RuntimeException) {
 			return (RuntimeException) e;
 		}
-		
 		if (e instanceof InvocationTargetException) {
 			// Extract subscriber method name to give developer more details
 			String method = Log.getStackTraceString(e.getCause());
@@ -326,16 +309,16 @@ public class TinyBus implements Bus {
 				switch (task.code) {
 				
 					case Task.CODE_REGISTER: {
-						meta = OBJECTS_META.get(objClass);
+						meta = OBJECTS_METAS.get(objClass);
 						if (meta == null) {
 							meta = new ObjectsMeta(obj);
-							OBJECTS_META.put(objClass, meta);
+							OBJECTS_METAS.put(objClass, meta);
 						}
-						meta.registerAtReceivers(obj, mEventReceivers);
+						meta.registerAtReceivers(obj, mEventSubscribers);
 						meta.registerAtProducers(obj, mEventProducers);
 						try {
-							meta.dispatchEvents(obj, mEventReceivers, OBJECTS_META, mImpl);
-							meta.dispatchEvents(mEventProducers, obj, OBJECTS_META, mImpl);
+							meta.dispatchEvents(obj, mEventSubscribers, OBJECTS_METAS, mImpl);
+							meta.dispatchEvents(mEventProducers, obj, OBJECTS_METAS, mImpl);
 						} catch (Exception e) {
 							throw handleExceptionOnEventDispatch(e);
 						}
@@ -343,19 +326,19 @@ public class TinyBus implements Bus {
 					}
 					
 					case Task.CODE_UNREGISTER: {
-						meta = OBJECTS_META.get(objClass);
-						meta.unregisterFromReceivers(obj, mEventReceivers);
+						meta = OBJECTS_METAS.get(objClass);
+						meta.unregisterFromReceivers(obj, mEventSubscribers);
 						meta.unregisterFromProducers(obj, mEventProducers);
 						break;
 					}
 					
 					case Task.CODE_POST_EVENT: {
-						final HashSet<Object> receivers = mEventReceivers.get(objClass);
+						final HashSet<Object> receivers = mEventSubscribers.get(objClass);
 						if (receivers != null) {
 							EventCallback eventCallback;
 							try {
 								for (Object receiver : receivers) {
-									meta = OBJECTS_META.get(receiver.getClass());
+									meta = OBJECTS_METAS.get(receiver.getClass());
 									eventCallback = meta.getEventCallback(objClass);
 									mImpl.dispatchEvent(eventCallback, receiver, obj);
 								}
@@ -382,23 +365,18 @@ public class TinyBus implements Bus {
 		return mImpl;
 	}
 	
-	// inner, not public implementation
+	//-- inner tinybus implementations implementation
 	
-	class TinyBusImpl implements EventDispatchCallback, LifecycleComponent {
+	private class TinyBusImpl implements EventDispatchCallback, LifecycleComponent {
 
+		private WeakReference<Context> mContextRef;
+		
 		@Override
 		public void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception {
-			
 			if (eventCallback.mode == Mode.Background) {
-				// TODO fix me
-				Context context = mContextRef == null ? null : mContextRef.get();
-				if (context == null) {
-					throw new IllegalStateException("To enable multithreaded dispatching "
-							+ "you have to create bus using TinyBus(Context) constructor.");
-				}
+				Context context = getNotNullContext();
 				TinyBusDepot.get(context).getDispatcher()
 					.dispatchEventInBackground(TinyBus.this, eventCallback, receiver, event);
-				
 			} else {
 				eventCallback.method.invoke(receiver, event);
 			}
@@ -441,6 +419,15 @@ public class TinyBus implements Bus {
 					wireable.onDestroy();
 				}
 			}
+		}
+		
+		public Context getNotNullContext() {
+			Context context = mContextRef == null ? null : mContextRef.get();
+			if (context == null) {
+				throw new IllegalStateException(
+					"You must create bus with TinyBus.from(Context) method to use this function.");
+			}
+			return context;
 		}
 		
 	}

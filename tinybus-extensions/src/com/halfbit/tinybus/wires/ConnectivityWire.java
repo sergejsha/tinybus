@@ -15,29 +15,48 @@ import com.halfbit.tinybus.TinyBus.Wireable;
 public class ConnectivityWire extends Wireable {
 
 	//-- public events
+
+	/** Event to be sent when connection on/off event happends. */
+	public static class ConnectionStateEvent {
+		protected final boolean mConnected;
+		
+		public ConnectionStateEvent(NetworkInfo networkInfo) {
+			mConnected = networkInfo != null && networkInfo.isConnected();
+		}
+		
+		public boolean isConnected() {
+			return mConnected; 
+		}
+	}
 	
-	public static final class ConnectionChangedEvent {
+	/** Event to be sent when any change happens to the network. */
+	public static class ConnectionEvent extends ConnectionStateEvent {
 		
 		public static final int CONNECTION_TYPE_UNKNOWN = 0;
 		public static final int CONNECTION_TYPE_FAST = 1;
 		public static final int CONNECTION_TYPE_2G = 2;
 		public static final int CONNECTION_TYPE_3G = 3;
 		public static final int CONNECTION_TYPE_4G = 4;
-		
-		public final NetworkInfo networkInfo;
-		
-		private final int mConnectionType;
-		private final boolean mIsConnected;
-		
-		public ConnectionChangedEvent(NetworkInfo networkInfo) {
-			this.networkInfo = networkInfo;
-			
-			mIsConnected = networkInfo != null 
-					&& networkInfo.isConnectedOrConnecting();
-			
-			if (mIsConnected) {
 				
-				switch (networkInfo.getType()) {
+		public final NetworkInfo mNetworkInfo;
+		private int mConnectionType = -1;
+		
+		public ConnectionEvent(NetworkInfo networkInfo) {
+			super(networkInfo);
+			mNetworkInfo = networkInfo;
+		}
+		
+		public int getConnectionType() {
+			if (mConnectionType == -1) {
+				calculateConnectionType();
+			}
+			return mConnectionType;  
+		}
+
+		private void calculateConnectionType() {
+			if (mConnected) {
+				
+				switch (mNetworkInfo.getType()) {
 					case ConnectivityManager.TYPE_WIFI:
 					case ConnectivityManager.TYPE_WIMAX:
 					case ConnectivityManager.TYPE_ETHERNET:
@@ -45,7 +64,7 @@ public class ConnectivityWire extends Wireable {
 						break;
 						
 					case ConnectivityManager.TYPE_MOBILE:
-						switch (networkInfo.getSubtype()) {
+						switch (mNetworkInfo.getSubtype()) {
 							case TelephonyManager.NETWORK_TYPE_LTE:
 							case TelephonyManager.NETWORK_TYPE_HSPAP:
 							case TelephonyManager.NETWORK_TYPE_HSPA:
@@ -78,19 +97,10 @@ public class ConnectivityWire extends Wireable {
 				}				
 				
 			} else {
-				
 				mConnectionType = CONNECTION_TYPE_UNKNOWN;
 			}
 		}
 		
-		public boolean isConnected() {
-			return mIsConnected;
-		}
-		
-		public int getConnectionType() {
-			return mConnectionType;  
-		}
-
 	}
 	
 	//-- implementation
@@ -100,34 +110,30 @@ public class ConnectivityWire extends Wireable {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			mConnectionChangedEvent = new ConnectionChangedEvent(
-					mConnectivityManager.getActiveNetworkInfo());
-			bus.post(mConnectionChangedEvent);
+			postEvent();
 		}
 		
 	};
-	
+
+	private final Class<? extends ConnectionStateEvent> mpProducedEventClass;
 	private ConnectivityManager mConnectivityManager;
-	private ConnectionChangedEvent mConnectionChangedEvent;
 	
-	public ConnectivityWire() {
+	// last known events
+	private ConnectionStateEvent mConnectionStateEvent;
+	private ConnectionEvent mConnectionEvent;
+	
+	public ConnectivityWire(Class<? extends ConnectionStateEvent> producedEventClass) {
+		mpProducedEventClass = producedEventClass;
 		mFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 	}
 	
 	@Override
 	protected void onStart() {
-		if (mConnectivityManager == null) {
-			mConnectivityManager = (ConnectivityManager) 
-					context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		}
 		
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-			
-			// Older Android versions doesn't notify receiver immediately 
-			// after registration. Thus we query the status manually for those.
-			
-			mConnectionChangedEvent = new ConnectionChangedEvent(
-					mConnectivityManager.getActiveNetworkInfo());
+			// Older Android versions don't notify receiver immediately 
+			// after registration. Thus we query status manually for those.
+			postEvent();
 		}
 		
 		bus.register(this);
@@ -138,11 +144,34 @@ public class ConnectivityWire extends Wireable {
 	protected void onStop() {
 		bus.unregister(this);
 		context.unregisterReceiver(mReceiver);
-		mConnectionChangedEvent = null;
+		mConnectionStateEvent = null;
+		mConnectionEvent = null;
+		mConnectivityManager = null;
 	}
 
 	@Produce
-	public ConnectionChangedEvent getConnectionChangedEvent() {
-		return mConnectionChangedEvent;
+	public ConnectionStateEvent getConnectionStateEvent() {
+		return mConnectionStateEvent;
+	}
+	
+	@Produce
+	public ConnectionEvent getConnectionEvent() {
+		return mConnectionEvent;
+	}
+	
+	void postEvent() {
+		if (mConnectivityManager == null) {
+			mConnectivityManager = (ConnectivityManager) 
+					context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		}
+		NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
+		if (mpProducedEventClass == ConnectionStateEvent.class) {
+			mConnectionStateEvent = new ConnectionStateEvent(networkInfo);
+			bus.post(mConnectionStateEvent);
+			
+		} else {
+			mConnectionEvent = new ConnectionEvent(networkInfo);
+			bus.post(mConnectionEvent);
+		}
 	}
 }

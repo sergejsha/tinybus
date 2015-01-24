@@ -22,7 +22,7 @@ import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
 
 public class Task implements Runnable {
 	
-	private static final TaskPool POOL = new TaskPool(12);
+	private static final TaskPool POOL = new TaskPool(24);
 	
 	public static final int CODE_REGISTER = 0;
 	public static final int CODE_UNREGISTER = 1;
@@ -63,13 +63,6 @@ public class Task implements Runnable {
 		}
 	}
 
-	//-- handling repost event
-	
-	public Task setupRepostHandler(TinyBus bus) {
-		this.bus = bus;
-		return this;
-	}
-	
 	@Override
 	public void run() {
 		if (code != BACKGROUND_DISPATCH_FROM_BACKGROUND) {
@@ -77,7 +70,8 @@ public class Task implements Runnable {
 					+ BACKGROUND_DISPATCH_FROM_BACKGROUND + " while received " + code);
 		}
 		code = CODE_POST_EVENT;
-		bus.post(this);
+		bus.post(obj);
+		recycle();
 	}
 	
 	//-- handling dispatch event
@@ -109,32 +103,6 @@ public class Task implements Runnable {
 	
 	//-- static classes
 	
-	// singly linked list as a FIFO task queue
-	public static class TaskQueue {
-		private Task head;
-		private Task tail;
-		
-		public void offer(Task task) {
-			if (tail == null) {
-				tail = head = task;
-			} else {
-				tail.prev = task;
-				tail = task;
-			}
-		}
-		
-		public Task poll() {
-			if (head == null) {
-				return null;
-			} else {
-				Task task = head;
-				head = head.prev;
-				if (head == null) tail = null;
-				return task;
-			}
-		}
-	}	
-
 	// task pool for better reuse of task instances
 	static class TaskPool {
 		

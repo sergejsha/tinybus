@@ -41,7 +41,7 @@ class ThreadPool {
 				mThreads[i] = thread;
 			}
 			
-			taskAccepted = thread.process(task);
+			taskAccepted = thread.processTask(task);
 			if (taskAccepted) {
 				break;
 			} // else, try our luck with the next thread

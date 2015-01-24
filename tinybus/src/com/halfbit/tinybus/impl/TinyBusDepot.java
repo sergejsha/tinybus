@@ -99,27 +99,12 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	
 	@Override
 	public void onActivityStopped(Activity activity) {
-		TinyBus bus = mBuses.get(activity);
-		if (bus != null) {
-			bus.getLifecycleComponent().onStop();
-		}
-		if (DEBUG) Log.d(TAG, " ### STOPPED, bus count: " + mBuses.size());
+		onContextStopped(activity);
 	}
 	
 	@Override
 	public void onActivityDestroyed(Activity activity) {
-		TinyBus bus = mBuses.remove(activity);
-		if (bus != null && !activity.isChangingConfigurations()) {
-			bus.getLifecycleComponent().onDestroy();
-			if (DEBUG) {
-				Log.d(TAG, " ### destroying bus: " + bus);
-			}
-		}
-		if (DEBUG) {
-			Log.d(TAG, " ### onDestroy() " + activity +
-				", active buses: " + mBuses.size() + 
-				", transient buses: " + mTransientBuses.size());
-		}
+		onContextDestroyed(activity);
 	}
 	
 	@Override
@@ -168,12 +153,33 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	@Override public void onActivityResumed(Activity activity) { }
 	@Override public void onActivityPaused(Activity activity) { }
 
-	void testDestroy() {
-		if (mDispatcher != null) {
-			mDispatcher.destroy();
-			mDispatcher = null;
+	//-- inner lifecycle implementation
+	
+	void onContextStopped(Context context) {
+		TinyBus bus = mBuses.get(context);
+		if (bus != null) {
+			bus.getLifecycleComponent().onStop();
 		}
-		mBuses.clear();
-		mTransientBuses.clear();
+		if (DEBUG) Log.d(TAG, " ### STOPPED, bus count: " + mBuses.size());
 	}
+	
+	void onContextDestroyed(Context context) {
+		TinyBus bus = mBuses.remove(context);
+		
+		boolean dontDestroyBus = context instanceof Activity 
+				&& ((Activity)context).isChangingConfigurations();
+		
+		if (bus != null && !dontDestroyBus) {
+			bus.getLifecycleComponent().onDestroy();
+			if (DEBUG) {
+				Log.d(TAG, " ### destroying bus: " + bus);
+			}
+		}
+		if (DEBUG) {
+			Log.d(TAG, " ### onDestroy() " + context +
+				", active buses: " + mBuses.size() + 
+				", transient buses: " + mTransientBuses.size());
+		}
+	}
+	
 }

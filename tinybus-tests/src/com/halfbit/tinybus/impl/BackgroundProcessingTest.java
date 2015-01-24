@@ -194,7 +194,6 @@ public class BackgroundProcessingTest extends InstrumentationTestCase {
 		bus = new TinyBus(getInstrumentation().getContext());
 		
 		final Callbacks callback = new Callbacks() {
-			
 			@Subscribe(mode=Mode.Background)
 			public void onEvent(String event) {
 				onCallback(event);
@@ -210,8 +209,9 @@ public class BackgroundProcessingTest extends InstrumentationTestCase {
 			bus.post(sentEvents[i]);
 		}
 		
-		latch.await(4, TimeUnit.SECONDS);
+		latch.await(5, TimeUnit.SECONDS);
 		
+		assertEquals(0, latch.getCount());
 		assertEquals(eventCount, callback.getEventsCount());
 		callback.assertSameEvents(sentEvents);
 		
@@ -265,7 +265,7 @@ public class BackgroundProcessingTest extends InstrumentationTestCase {
 		bus.unregister(producer);
 		bus.register(producer);
 		
-		latch.await(3, TimeUnit.SECONDS);
+		latch.await(6, TimeUnit.SECONDS);
 		
 		// because of async delivery we cannot guaranty event sequence
 		callback1.assertEventsAnyOrder(event1, producerEvent, event2, event3, producerEvent);
@@ -327,6 +327,8 @@ public class BackgroundProcessingTest extends InstrumentationTestCase {
 	//-- post from background
 	
 	public void testPostBackgroundReceiveMainThread() throws Throwable {
+		
+		stringResult = null;
 		
 		runTestOnUiThread(new Runnable() {
 			public void run() {

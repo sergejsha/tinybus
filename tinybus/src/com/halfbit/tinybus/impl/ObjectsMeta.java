@@ -49,11 +49,10 @@ public class ObjectsMeta {
 	
 	//-- implementation
 	
-	private HashMap<Class<? extends Object>/*event class*/, EventCallback> mEventCallbacks
+	private final HashMap<Class<? extends Object>/*event class*/, EventCallback> mEventCallbacks
 		= new HashMap<Class<? extends Object>, EventCallback>();
-
-	private HashMap<Class<? extends Object>/*event class*/, Method> mProducerCallbacks
-		= new HashMap<Class<? extends Object>, Method>();
+	
+	private HashMap<Class<? extends Object>/*event class*/, Method> mProducerCallbacks;
 	
 	public ObjectsMeta(Object obj) {
 		final Method[] methods = obj.getClass().getMethods();
@@ -75,6 +74,9 @@ public class ObjectsMeta {
 				}
 				
 			} else if (method.isAnnotationPresent(Produce.class)) {
+				if (mProducerCallbacks == null) {
+					mProducerCallbacks = new HashMap<Class<? extends Object>, Method>();
+				}
 				mProducerCallbacks.put(method.getReturnType(), method);
 			}
 		}
@@ -89,6 +91,10 @@ public class ObjectsMeta {
 			HashMap<Class<? extends Object>, HashSet<Object>> receivers,
 			HashMap<Class<? extends Object>, ObjectsMeta> metas,
 			EventDispatchCallback callback) throws Exception {
+		
+		if (mProducerCallbacks == null) {
+			return; // there is no producers for this event type
+		}
 		
 		Iterator<Entry<Class<? extends Object>, Method>> 
 			producerCallbacks = mProducerCallbacks.entrySet().iterator();
@@ -161,6 +167,10 @@ public class ObjectsMeta {
 	public void unregisterFromProducers(Object obj,
 			HashMap<Class<? extends Object>, Object>producers) {
 		
+		if (mProducerCallbacks == null) {
+			return; // no need to unregister, as there is no @Produce methods 
+		}
+		
 		Class<? extends Object> key;
 		final Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
 		while (keys.hasNext()) {
@@ -195,11 +205,13 @@ public class ObjectsMeta {
 
 		if (!registered) {
 			// check producers
-			keys = mProducerCallbacks.keySet().iterator();
-			while (keys.hasNext()) {
-				registered = producers.containsKey(keys.next());
-				if (registered) {
-					break;
+			if (mProducerCallbacks != null) {
+				keys = mProducerCallbacks.keySet().iterator();
+				while (keys.hasNext()) {
+					registered = producers.containsKey(keys.next());
+					if (registered) {
+						break;
+					}
 				}
 			}
 		}
@@ -210,6 +222,10 @@ public class ObjectsMeta {
 	public void registerAtProducers(Object obj,
 			HashMap<Class<? extends Object>, Object> producers) {
 
+		if (mProducerCallbacks == null) {
+			return; // this object has no @Produce methods
+		}
+		
 		Class<? extends Object> key;
 		final Iterator<Class<? extends Object>> keys = mProducerCallbacks.keySet().iterator();
 		while (keys.hasNext()) {

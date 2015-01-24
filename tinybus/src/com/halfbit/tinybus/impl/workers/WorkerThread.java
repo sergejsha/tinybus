@@ -38,15 +38,15 @@ class WorkerThread extends Thread {
 		mRunning = new AtomicBoolean(true);
 	}
 	
-	public boolean process(Task task) {
+	public boolean processTask(Task task) {
 		synchronized (mLock) {
 			if (mTask != null) {
 				return false;
 			}
 			mTask = task;
 			mLock.notify();
+			return true;
 		}
-		return true;
 	}
 
 	public void stopIt() {
@@ -57,34 +57,32 @@ class WorkerThread extends Thread {
 	public void run() {
 		Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 		
-		Task task;
 		while (mRunning.get()) {
+
+			// wait for task 
 			synchronized (mLock) {
-				task = mTask;
-			}
-			
-			if (task == null) {
-				synchronized (mLock) {
+				while (mTask == null) {
 					try {
 						mLock.wait();
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
+			}
+
+			try {
+				// process task
+				mTask.dispatchInBackground();
 				
-			} else {
-				try {
-					task.dispatchInBackground();
-					
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-					
-				} finally {
-					synchronized (mLock) {
-						mTask = null;
-					}
-					mThreadPool.onTaskProcessed(task);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+				
+			} finally {
+				Task task = mTask;
+				synchronized (mLock) {
+					mTask = null;
 				}
+				mThreadPool.onTaskProcessed(task);
 			}
 		}
 	}

@@ -26,8 +26,8 @@ import android.os.Message;
 
 import com.halfbit.tinybus.TinyBus;
 import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
-import com.halfbit.tinybus.impl.Task.TaskQueue;
 import com.halfbit.tinybus.impl.Task;
+import com.halfbit.tinybus.impl.TaskQueue;
 
 /**
  * This class dispatches and manages <code>Task</code> to be 
@@ -44,9 +44,6 @@ public class Dispatcher {
 	// two queue structures for faster access (any better options?)
 	private final HashMap<String, SerialTaskQueue> mQueuesMap;
 	private final ArrayList<SerialTaskQueue> mQueuesList;
-	
-	// state
-	private Task mReservedTask;	
 	
 	public Dispatcher() {
 		HandlerThread thread = new HandlerThread("tinybus-dispatcher");
@@ -67,8 +64,7 @@ public class Dispatcher {
 	public void dispatchEventInBackground(TinyBus bus, EventCallback eventCallback, 
 			Object receiver, Object event) {
 		
-		final Task task = Task
-				.obtainTask(bus, Task.BACKGROUND_DISPATCH_IN_BACKGROUND, null)
+		Task task = Task.obtainTask(bus, Task.BACKGROUND_DISPATCH_IN_BACKGROUND, null)
 				.setupDispatchEventHandler(eventCallback, receiver, event);
 		
 		mDispatcherHandler.postMessageProcessTask(task);
@@ -109,7 +105,7 @@ public class Dispatcher {
 		
 		// update task queue status
 		SerialTaskQueue queue = mQueuesMap.get(task.eventCallback.queue);
-		queue.setHasTaskInProcess(false);
+		queue.setProcessing(false);
 		
 		task.recycle();
 		processNextTask();
@@ -122,29 +118,28 @@ public class Dispatcher {
 	private void processNextTask() {
 		assertDispatcherThread();
 		
-		Task task = mReservedTask;
-		if (task == null) {
-			for(SerialTaskQueue queue : mQueuesList) {
-				if (queue.hasTaskInProcess()) {
-					continue;
-				}
-				
-				task = queue.poll();
-				if (task != null) {
-					mReservedTask = task;
-					queue.setHasTaskInProcess(true);
-					break;
-				}
+		SerialTaskQueue nextQueue = null;
+		for(SerialTaskQueue queue : mQueuesList) {
+			if (queue.isProcessing() || queue.isEmpty()) {
+				continue;
 			}
+			nextQueue = queue;
+			break;
 		}
 		
-		if (task == null) {
-			return; // no tasks to process
+		if (nextQueue == null) {
+			return; // nothing to do process for now
 		}
-
+		
+		Task task = nextQueue.poll();
 		boolean taskAccepted = mThreadPool.processTask(task);
 		if (taskAccepted) {
-			mReservedTask = null;
+			nextQueue.setProcessing(true);
+			
+		} else {
+			// no worker threads available, 
+			// return task back into the queue
+			nextQueue.unpoll(task);
 		}
 	}
 	
@@ -207,7 +202,7 @@ public class Dispatcher {
 
 		private final String mQueueName;
 		
-		private boolean mHasTaskInProcess;
+		private boolean mProcessing;
 		private int mSize;
 		
 		public SerialTaskQueue(String queueName) {
@@ -218,12 +213,12 @@ public class Dispatcher {
 			return mQueueName;
 		}
 		
-		public void setHasTaskInProcess(boolean hasTaskInProcess) {
-			mHasTaskInProcess = hasTaskInProcess;
+		public void setProcessing(boolean processing) {
+			mProcessing = processing;
 		}
 		
-		public boolean hasTaskInProcess() {
-			return mHasTaskInProcess;
+		public boolean isProcessing() {
+			return mProcessing;
 		}
 		
 		@Override
@@ -236,6 +231,12 @@ public class Dispatcher {
 		public Task poll() {
 			mSize--;
 			return super.poll();
+		}
+		
+		@Override
+		public void unpoll(Task task) {
+			super.unpoll(task);
+			mSize++;
 		}
 		
 		public int getSize() {
