@@ -2,6 +2,8 @@
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
 
+Light and fast implementation of [Otto][2] event bus with advanced event processing in background.
+
 Version 3.0 (work in progress)
 =======
   - [x] Background processing queues
@@ -11,7 +13,7 @@ TinyBus is
 =======
  - tiny (~ 17K jar)
  - fast (optimized for startup and event dispatching)
- - well tested (> 60 junit tests)
+ - well tested (> 85 junit tests)
  - annotation based (no requiremens to method names, no interfaces to implement)
 
 TinyBus is for those who want
