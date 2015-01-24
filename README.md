@@ -2,7 +2,7 @@
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
 
-Light and fast implementation of [Otto][2] event bus with advanced event processing in background.
+Lighter and faster implementation of [Otto][2] event bus with features you missed.
 
 Version 3.0 (work in progress)
 =======
