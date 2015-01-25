@@ -46,7 +46,7 @@ Performance reference tests
 =======
 ![tinybus][3]
 
-Executed on Nexus 5 device (Android 5.0.2, ART, screen off).
+Executed on Nexus 5 device (Android 5.0.1, ART, screen off).
 
 TinyBus
 =======
