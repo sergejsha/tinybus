@@ -22,26 +22,36 @@ import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
 
 public class Task implements Runnable {
 	
-	private static final TaskPool POOL = new TaskPool(24);
+	public static interface TaskCallbacks {
+		void onPostFromBackground(Task task);
+		void onPostDelayed(Task task);
+		void onDispatchInBackground(Task task) throws Exception;
+	}
+	
+	private static final TaskPool POOL = new TaskPool(32);
 	
 	public static final int CODE_REGISTER = 0;
 	public static final int CODE_UNREGISTER = 1;
-	public static final int CODE_POST_EVENT = 2;
+	public static final int CODE_POST = 2;
+	public static final int CODE_POST_DELAYED = 3;
 	
-	public static final int BACKGROUND_DISPATCH_FROM_BACKGROUND = 10;
-	public static final int BACKGROUND_DISPATCH_IN_BACKGROUND = 11;
+	public static final int CODE_DISPATCH_FROM_BACKGROUND = 10;
+	public static final int CODE_DISPATCH_TO_BACKGROUND = 11;
 	
+	// task as linked list
 	public Task prev;
 	
+	// general purpose
 	public TinyBus bus;
 	public int code;
 	public Object obj;
+	public TaskCallbacks callbacks;
 	
-	// runnable dispatch
+	// dispatch in background
 	public EventCallback eventCallback;
 	public WeakReference<Object> receiverRef;
 	
-	Task() { }
+	private Task() { }
 	
 	public static Task obtainTask(TinyBus bus, int code, Object obj) {
 		Task task;
@@ -55,9 +65,15 @@ public class Task implements Runnable {
 		return task;
 	}
 	
+	public Task setTaskCallbacks(TaskCallbacks callbacks) {
+		this.callbacks = callbacks;
+		return this;
+	}
+	
 	public void recycle() {
 		bus = null;
 		obj = null;
+		callbacks = null;
 		synchronized (POOL) {
 			POOL.release(this);
 		}
@@ -65,45 +81,21 @@ public class Task implements Runnable {
 
 	@Override
 	public void run() {
-		if (code != BACKGROUND_DISPATCH_FROM_BACKGROUND) {
-			throw new IllegalStateException("Assertion. Expected task " 
-					+ BACKGROUND_DISPATCH_FROM_BACKGROUND + " while received " + code);
-		}
-		code = CODE_POST_EVENT;
-		bus.post(obj);
-		recycle();
-	}
-	
-	//-- handling dispatch event
-	
-	public Task setupDispatchEventHandler(EventCallback eventCallback, Object receiver, Object event) {
-		this.eventCallback = eventCallback;
-		this.receiverRef = new WeakReference<Object>(receiver);
-		this.obj = event;
-		return this;
-	}
-	
-	public void dispatchInBackground() throws Exception {
-		if (code != BACKGROUND_DISPATCH_IN_BACKGROUND) {
-			throw new IllegalStateException("Assertion. Expected task " 
-					+ BACKGROUND_DISPATCH_IN_BACKGROUND + " while received " + code);
-		}
-		
-		final Object receiver = this.receiverRef.get();
-		if (receiver != null) {
-			if (eventCallback.method.getParameterTypes().length == 2) {
-				// expect callback with two parameters
-				eventCallback.method.invoke(receiver, obj, this.bus);
-			} else {
-				// expect callback with a single parameter
-				eventCallback.method.invoke(receiver, obj);
-			}
+		switch (code) {
+			case CODE_DISPATCH_FROM_BACKGROUND:
+				callbacks.onPostFromBackground(this);
+				break;
+			case CODE_POST_DELAYED:
+				callbacks.onPostDelayed(this);
+				break;
+			default: 
+				throw new IllegalStateException(String.valueOf(code));
 		}
 	}
 	
 	//-- static classes
 	
-	// task pool for better reuse of task instances
+	/** Task pool for better reuse of task instances */
 	static class TaskPool {
 		
 		private final int mMaxSize;

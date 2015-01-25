@@ -17,6 +17,7 @@ package com.halfbit.tinybus;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +36,8 @@ import com.halfbit.tinybus.impl.ObjectsMeta.EventDispatchCallback;
 import com.halfbit.tinybus.impl.Task;
 import com.halfbit.tinybus.impl.TaskQueue;
 import com.halfbit.tinybus.impl.TinyBusDepot;
-import com.halfbit.tinybus.impl.TinyBusDepot.LifecycleComponent;
+import com.halfbit.tinybus.impl.Task.TaskCallbacks;
+import com.halfbit.tinybus.impl.TinyBusDepot.LifecycleCallbacks;
 
 /**
  * Main bus implementation. You can either create a bus instance 
@@ -135,7 +137,7 @@ public class TinyBus implements Bus {
 	
 	// subscribers for certain event type
 	private final HashMap<Class<?>, HashSet<Object>> mEventSubscribers
-		= new HashMap<Class<?>, HashSet<Object>>();
+		= new HashMap<Class<?>, HashSet<Object>>(20);
 	
 	// producers for certain event type
 	private final HashMap<Class<?>, Object> mEventProducers 
@@ -143,12 +145,12 @@ public class TinyBus implements Bus {
 	
 	// context
 	private final TinyBusImpl mImpl;
-	private final Handler mWorkerHandler;
-	private final Thread mWorkerThread;
+	private final Handler mMainHandler;
+	private final Thread mMainThread;
 
 	// state
-	private final TaskQueue mTaskQueue;
-	private boolean mProcessing;
+	final TaskQueue mTaskQueue;
+	boolean mProcessing;
 	
 	ArrayList<Wireable> mWireables;
 	
@@ -163,10 +165,10 @@ public class TinyBus implements Bus {
 		mImpl.attachContext(context);
 		
 		mTaskQueue = new TaskQueue();
-		mWorkerThread = Thread.currentThread();
+		mMainThread = Thread.currentThread();
 		
 		final Looper looper = Looper.myLooper();
-		mWorkerHandler = looper == null ? null : new Handler(looper);
+		mMainHandler = looper == null ? null : new Handler(looper);
 	}
 	
 	@Override
@@ -196,22 +198,47 @@ public class TinyBus implements Bus {
 			throw new NullPointerException("Event must not be null");
 		}
 		
-		if (mWorkerThread == Thread.currentThread()) {
-			Task task = Task.obtainTask(this, Task.CODE_POST_EVENT, event);
+		if (mMainThread == Thread.currentThread()) {
+			// this is main thread
+			Task task = Task.obtainTask(this, Task.CODE_POST, event);
 			mTaskQueue.offer(task);
 			if (!mProcessing) processQueue();
 			
-		} else {
-			if (mWorkerHandler == null) {
-				throw new IllegalStateException("You can only call post() from a background "
-						+ "thread, if the thread, in which TinyBus was created, had a Looper. "
-						+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
-			}
+		} else { 
+			// this is a background thread
 			
-			if (mWorkerHandler.getLooper().getThread().isAlive()) {
-				mWorkerHandler.post(Task.obtainTask(this, Task.BACKGROUND_DISPATCH_FROM_BACKGROUND, event));
+			if (mMainThread.isAlive()) {
+				Task task = Task.obtainTask(this, Task.CODE_DISPATCH_FROM_BACKGROUND, event)
+						.setTaskCallbacks(mImpl);
+				getMainHandlerNotNull().post(task);
 			}
 		}
+	}
+	
+	private Handler getMainHandlerNotNull() {
+		if (mMainHandler == null) {
+			throw new IllegalStateException("You can only call post() from a background "
+					+ "thread, if the thread, in which TinyBus was created, had a Looper. "
+					+ "Solution: create TinyBus in MainThread or in another thread with Looper.");
+		}
+		return mMainHandler;
+	}
+	
+	
+	//-- delayed tasks (experimental)
+	
+	public void postDelayed(Object event, long delayMillis) {
+		if (event == null) {
+			throw new NullPointerException("Event must not be null");
+		}
+		mImpl.postDelayed(event, delayMillis, getMainHandlerNotNull());
+	}
+	
+	public void cancelDelayed(Class<?> eventClass) {
+		if (eventClass == null) {
+			throw new NullPointerException("Event class must not be null");
+		}
+		mImpl.cancelDelayed(eventClass, getMainHandlerNotNull());
 	}
 	
 	//-- wireable implementation
@@ -274,9 +301,9 @@ public class TinyBus implements Bus {
 		if (obj == null) {
 			throw new NullPointerException("Object must not be null");
 		}
-		if (mWorkerThread != Thread.currentThread()) {
+		if (mMainThread != Thread.currentThread()) {
 			throw new IllegalStateException("You must call this method from the same thread, "
-					+ "in which TinyBus was created. Created: " + mWorkerThread 
+					+ "in which TinyBus was created. Created: " + mMainThread 
 					+ ", current thread: " + Thread.currentThread());
 		}
 	}
@@ -295,7 +322,7 @@ public class TinyBus implements Bus {
 		return new RuntimeException(e);		
 	}
 	
-	private void processQueue() {
+	void processQueue() {
 		Task task;
 		ObjectsMeta meta;
 		
@@ -332,7 +359,7 @@ public class TinyBus implements Bus {
 						break;
 					}
 					
-					case Task.CODE_POST_EVENT: {
+					case Task.CODE_POST: {
 						final HashSet<Object> receivers = mEventSubscribers.get(objClass);
 						if (receivers != null) {
 							EventCallback eventCallback;
@@ -359,24 +386,64 @@ public class TinyBus implements Bus {
 		}		
 	}
 	
-	//-- package methods
-	
-	public LifecycleComponent getLifecycleComponent() {
+	public LifecycleCallbacks getLifecycleCallbacks() {
 		return mImpl;
 	}
 	
-	//-- inner tinybus implementations implementation
+	//-- inner tinybus implementation used extended features and callbacks
 	
-	private class TinyBusImpl implements EventDispatchCallback, LifecycleComponent {
+	private class TinyBusImpl implements EventDispatchCallback, LifecycleCallbacks, TaskCallbacks {
 
 		private WeakReference<Context> mContextRef;
+		private HashMap<Class<?>, Task> mDelayedTasks;
+		
+		//-- delayed events
+		
+		public void postDelayed(Object event, long delayMillis, Handler handler) {
+			Task task;
+			synchronized (this) {
+				if (mDelayedTasks == null) {
+					mDelayedTasks = new HashMap<Class<?>, Task>();
+				}
+				task = mDelayedTasks.get(event.getClass());
+				if (task == null) {
+					task = Task.obtainTask(TinyBus.this, Task.CODE_POST_DELAYED, event)
+							.setTaskCallbacks(this);
+					mDelayedTasks.put(event.getClass(), task);
+					
+				} else {
+					handler.removeCallbacks(task);
+					// replace event and reuse task
+					task.obj = event;
+				}
+			}
+			handler.postDelayed(task, delayMillis);
+		}
+
+		public void cancelDelayed(Class<?> eventClass, Handler handler) {
+			Task task;
+			synchronized (this) {
+				task = mDelayedTasks.remove(eventClass);
+			}
+			if (task != null) {
+				handler.removeCallbacks(task);
+				task.recycle();
+			}
+		}
+
+		//-- callbacks
 		
 		@Override
 		public void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception {
 			if (eventCallback.mode == Mode.Background) {
+				Task task = Task.obtainTask(TinyBus.this, Task.CODE_DISPATCH_TO_BACKGROUND, event)
+						.setTaskCallbacks(this);
+				task.eventCallback = eventCallback;
+				task.receiverRef = new WeakReference<Object>(receiver);
+				
 				Context context = getNotNullContext();
-				TinyBusDepot.get(context).getDispatcher()
-					.dispatchEventInBackground(TinyBus.this, eventCallback, receiver, event);
+				TinyBusDepot.get(context).getDispatcher().dispatchEventToBackground(task);
+				
 			} else {
 				eventCallback.method.invoke(receiver, event);
 			}
@@ -428,6 +495,40 @@ public class TinyBus implements Bus {
 					"You must create bus with TinyBus.from(Context) method to use this function.");
 			}
 			return context;
+		}
+
+		//-- task callbacks
+		
+		@Override
+		public void onPostFromBackground(Task task) {
+			task.code = Task.CODE_POST;
+			mTaskQueue.offer(task);
+			if (!mProcessing) processQueue();
+		}
+
+		@Override
+		public void onPostDelayed(Task task) {
+			synchronized (this) {
+				mDelayedTasks.remove(task.obj);
+			}
+			task.code = Task.CODE_POST;
+			mTaskQueue.offer(task);
+			if (!mProcessing) processQueue();
+		}
+
+		@Override
+		public void onDispatchInBackground(Task task) throws Exception {
+			final Object receiver = task.receiverRef.get();
+			if (receiver != null) {
+				Method callbackMethod = task.eventCallback.method; 
+				if (callbackMethod.getParameterTypes().length == 2) {
+					// expect callback with two parameters
+					callbackMethod.invoke(receiver, task.obj, task.bus);
+				} else {
+					// expect callback with a single parameter
+					callbackMethod.invoke(receiver, task.obj);
+				}
+			}
 		}
 		
 	}

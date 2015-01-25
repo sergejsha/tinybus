@@ -7,6 +7,10 @@ import junit.framework.Assert;
 
 public abstract class Callbacks {
 
+	public static interface EventIterator {
+		void onEvent(Object event);
+	}
+	
 	private final ArrayList<Object> mEvents = new ArrayList<Object>();
 	
 	protected synchronized void onCallback(Object event) {
@@ -19,6 +23,12 @@ public abstract class Callbacks {
 	
 	public synchronized int getEventsCount() {
 		return mEvents.size();
+	}
+	
+	public void iterate(EventIterator iterator) {
+		for (Object event : mEvents) {
+			iterator.onEvent(event);
+		}
 	}
 	
 	public void assertNullEvent() {

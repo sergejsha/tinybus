@@ -24,8 +24,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 
-import com.halfbit.tinybus.TinyBus;
-import com.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
 import com.halfbit.tinybus.impl.Task;
 import com.halfbit.tinybus.impl.TaskQueue;
 
@@ -61,12 +59,7 @@ public class Dispatcher {
 	 * 
 	 * <p>This method can be called in any thread
 	 */
-	public void dispatchEventInBackground(TinyBus bus, EventCallback eventCallback, 
-			Object receiver, Object event) {
-		
-		Task task = Task.obtainTask(bus, Task.BACKGROUND_DISPATCH_IN_BACKGROUND, null)
-				.setupDispatchEventHandler(eventCallback, receiver, event);
-		
+	public void dispatchEventToBackground(Task task) {
 		mDispatcherHandler.postMessageProcessTask(task);
 	}
 

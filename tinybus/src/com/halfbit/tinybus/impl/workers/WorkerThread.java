@@ -72,7 +72,7 @@ class WorkerThread extends Thread {
 
 			try {
 				// process task
-				mTask.dispatchInBackground();
+				mTask.callbacks.onDispatchInBackground(mTask);
 				
 			} catch (Exception e) {
 				throw new RuntimeException(e);

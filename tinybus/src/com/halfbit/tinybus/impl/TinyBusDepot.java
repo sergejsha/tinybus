@@ -30,7 +30,7 @@ import com.halfbit.tinybus.impl.workers.Dispatcher;
 
 public class TinyBusDepot implements ActivityLifecycleCallbacks {
 
-	public static interface LifecycleComponent {
+	public static interface LifecycleCallbacks {
 		void attachContext(Context context);
 		void onStart();
 		void onStop();
@@ -92,7 +92,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 				mTransientBuses.removeAt(transientBusIndex);
 			}
 			
-			bus.getLifecycleComponent().onStart();
+			bus.getLifecycleCallbacks().onStart();
 		}
 		if (DEBUG) Log.d(TAG, " ### STARTED, bus count: " + mBuses.size());
 	}
@@ -122,7 +122,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 				}
 				
 				mTransientBuses.delete(busId);
-				bus.getLifecycleComponent().attachContext(activity);
+				bus.getLifecycleCallbacks().attachContext(activity);
 				mBuses.put(activity, bus);
 				if (DEBUG) {
 					Log.d(TAG, " ### onCreated(), bus restored for " + activity + 
@@ -158,7 +158,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	void onContextStopped(Context context) {
 		TinyBus bus = mBuses.get(context);
 		if (bus != null) {
-			bus.getLifecycleComponent().onStop();
+			bus.getLifecycleCallbacks().onStop();
 		}
 		if (DEBUG) Log.d(TAG, " ### STOPPED, bus count: " + mBuses.size());
 	}
@@ -170,7 +170,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 				&& ((Activity)context).isChangingConfigurations();
 		
 		if (bus != null && !dontDestroyBus) {
-			bus.getLifecycleComponent().onDestroy();
+			bus.getLifecycleCallbacks().onDestroy();
 			if (DEBUG) {
 				Log.d(TAG, " ### destroying bus: " + bus);
 			}
