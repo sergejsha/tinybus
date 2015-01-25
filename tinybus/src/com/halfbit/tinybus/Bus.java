@@ -112,4 +112,8 @@ public interface Bus {
 	 * 					<code>false</code> otherwise
 	 */
 	boolean hasRegistered(Object object);
+	
+	// TODO add javadoc
+	void postDelayed(Object event, long delayMillis);
+	void cancelDelayed(Class<?> eventClass);
 }

@@ -227,6 +227,7 @@ public class TinyBus implements Bus {
 	
 	//-- delayed tasks (experimental)
 	
+	@Override
 	public void postDelayed(Object event, long delayMillis) {
 		if (event == null) {
 			throw new NullPointerException("Event must not be null");
@@ -234,6 +235,7 @@ public class TinyBus implements Bus {
 		mImpl.postDelayed(event, delayMillis, getMainHandlerNotNull());
 	}
 	
+	@Override
 	public void cancelDelayed(Class<?> eventClass) {
 		if (eventClass == null) {
 			throw new NullPointerException("Event class must not be null");
