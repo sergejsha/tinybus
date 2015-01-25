@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.test.InstrumentationTestCase;
+import android.test.UiThreadTest;
 
 import com.halfbit.tinybus.Subscribe;
 import com.halfbit.tinybus.Subscribe.Mode;
@@ -345,4 +346,10 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 		callbacks2.assertNoEvents();
 	}
 	
+	@UiThreadTest
+	public void testCancelDelayedNotPosted() {
+		bus = new TinyBus(getInstrumentation().getContext());
+		bus.cancelDelayed(TimedEvent.class);
+		// no exceptions, ok
+	}
 }

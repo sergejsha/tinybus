@@ -423,9 +423,11 @@ public class TinyBus implements Bus {
 		}
 
 		public void cancelDelayed(Class<?> eventClass, Handler handler) {
-			Task task;
+			Task task = null;
 			synchronized (this) {
-				task = mDelayedTasks.remove(eventClass);
+				if (mDelayedTasks != null) {
+					task = mDelayedTasks.remove(eventClass);
+				}
 			}
 			if (task != null) {
 				handler.removeCallbacks(task);
