@@ -13,7 +13,7 @@ TinyBus is
 =======
  - tiny (~ 17K jar)
  - fast (optimized for startup and event dispatching)
- - well tested (> 85 junit tests)
+ - well tested (> 90 junit tests)
  - annotation based (no requiremens to method names, no interfaces to implement)
 
 TinyBus is for those who want
