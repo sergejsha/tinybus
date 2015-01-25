@@ -7,7 +7,7 @@ Lighter and faster implementation of [Otto][2] event bus with features you misse
 Version 3.0 (work in progress)
 =======
   - [x] Background processing queues
-  - [ ] Post delayed events
+  - [x] Post delayed events
 
 TinyBus is
 =======
