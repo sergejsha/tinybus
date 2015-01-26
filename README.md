@@ -134,12 +134,8 @@ Proguard configuration
 
 ```
 -keepclassmembers class ** {
-    @com.halfbit.tinybus.Subscribe public *;
-    @com.halfbit.tinybus.Produce public *;
-}
-
--keepclassmembers enum com.halfbit.tinybus.Subscribe$Mode {
-	public *;
+    @de.halfbit.tinybus.Subscribe public *;
+    @de.halfbit.tinybus.Produce public *;
 }
 ```
 

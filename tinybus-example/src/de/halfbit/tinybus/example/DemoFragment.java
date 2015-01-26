@@ -7,9 +7,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
-
-import com.halfbit.tinybus.example.R;
-
 import de.halfbit.tinybus.Bus;
 import de.halfbit.tinybus.Produce;
 import de.halfbit.tinybus.Subscribe;

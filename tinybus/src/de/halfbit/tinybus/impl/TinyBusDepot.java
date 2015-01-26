@@ -39,7 +39,7 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	private static final boolean DEBUG = false;
 	private static final String TAG = TinyBusDepot.class.getSimpleName();
 	
-	private static final String KEY_BUS_ID = "com.halfbit.tinybus.id";
+	private static final String KEY_BUS_ID = "de.halfbit.tinybus.id";
 	private static TinyBusDepot INSTANCE;
 	
 	public static TinyBusDepot get(Context context) {
