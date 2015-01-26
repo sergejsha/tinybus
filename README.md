@@ -2,27 +2,30 @@
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
 
-Lighter and faster implementation of [Otto][2] event bus with features you missed.
+Faster implementation of [Otto][2] event bus with additional features you missed.
 
 Version 3.0 (in test)
 =======
   - [x] Background processing queues
   - [x] Delayed events
-  
+ 
 TinyBus is
 =======
- - tiny (~ 17K jar)
+ - tiny (~ 30K jar)
  - fast (optimized for startup and event dispatching)
  - well tested (> 90 junit tests)
  - annotation based (no requiremens to method names, no interfaces to implement)
 
-TinyBus is for those who want
- - to remove unneccessary interfaces and direct component dependencies
- - to simplify communication between Activities, Fragments and Services
- - to simplify events exchange between background and Main Thread
- - to simplify consumption of standard system events (like Battery Level, Connection State etc.)
-
-Like it? Here is TinyBus in detail.
+TinyBus API in nutshell
+=======
+ - `@Subscribe` annotates event handler methods running in the main thread
+ - `@Subscribe(mode=Mode.Background)` annotates event handler methods running in a background thread
+ - `@Subscribe(mode=Mode.Background, queue="web")` annotates event handler methods running in a serialized background queue
+ - `@Produce` annotates methods delivering most recent events (aka sticky events)
+ - `Bus.register(Object)` and `Bus.unregister(Object)` register and unregister objects with subscriber and producer methods
+ - `Bus.hasRegistered(Object)` checks, whether given object is registered
+ - `Bus.post(Object)` posts given event object
+ - `Bus.postDelayed(Object, long)` and `Bus.cancelDelayed(Class)` schedules event delivery later in time and cancels it
 
 TinyBus quick start
 =======
@@ -37,7 +40,7 @@ public void onEvent(LoadingEvent event) { /* event handler logic */ }
 // ... and register it in the bus
 bus.register(this);
    
-// 3. post event to subscriber
+// 3. post event to all registered subscribers
 bus.post(new LoadingEvent());
 ```
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
@@ -47,19 +50,6 @@ Performance reference tests
 ![tinybus][3]
 
 Executed on Nexus 5 device (Android 5.0.1, ART, screen off).
-
-TinyBus
-=======
-
-TinyBus implements interfaces defined in [Otto project][2] by applying them to Android's single thread model. There are two simple rules to follow, when using TinyBus: 
-
- * Create TinyBus instance in Main Thread.
- * Call ```register()``` and ```unregister()``` methods in Main Thread.
-
-To simplify communication with background threads TinyBus offers the following:
- 
- * Method ```post()``` dispatches events in Main Thread even when called form a background thread.
- * Bus calls subscribers annotated with ```@Subscribe(Mode.Background)``` in a background thread.
 
 TinyBus extensions
 =======
