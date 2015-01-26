@@ -51,7 +51,7 @@ Performance reference tests
 
 Executed on Nexus 5 device (Android 5.0.1, ART, screen off).
 
-TinyBus extensions
+TinyBus extensions (still in 'β')
 =======
 
 Extensions is a unique feature of TinyBus. With it you can easily subscribe to commonly used events like battery level, connectivity change, phone shake event or even standard Android broadcast Intents. Here is a short example.
