@@ -4,11 +4,11 @@
 
 Lighter and faster implementation of [Otto][2] event bus with features you missed.
 
-Version 3.0 (work in progress)
+Version 3.0 (in test)
 =======
   - [x] Background processing queues
-  - [x] Post delayed events
-
+  - [x] Delayed events
+  
 TinyBus is
 =======
  - tiny (~ 17K jar)
