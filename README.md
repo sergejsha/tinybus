@@ -25,7 +25,7 @@ TinyBus API in nutshell
  - `Bus.register(Object)` and `Bus.unregister(Object)` register and unregister objects with subscriber and producer methods.
  - `Bus.hasRegistered(Object)` checks, whether given object is registered.
  - `Bus.post(Object)` posts given event object.
- - `Bus.postDelayed(Object, long)` and `Bus.cancelDelayed(Class)` schedules event delivery later in time and cancels it.
+ - `Bus.postDelayed(Object, long)` and `Bus.cancelDelayed(Class)` schedules event delivery for later in time and cancels it.
 
 TinyBus quick start
 =======
