@@ -61,7 +61,9 @@ public class ObjectsMeta {
 		EventCallback callback;
 		Subscribe ann;
 		for (Method method : methods) {
-			if (method.isBridge()) continue;
+			if (method.isBridge() || method.isSynthetic()) {
+				continue;
+			}
 			
 			ann = method.getAnnotation(Subscribe.class);
 			if (ann != null) {
@@ -69,7 +71,7 @@ public class ObjectsMeta {
 				callback = mEventCallbacks.put(params[0], new EventCallback(method, ann));
 				if (callback != null) {
 					throw new IllegalArgumentException("Only one @Subscriber can be defined "
-							+ "per an event type in the same class. Event type: " 
+							+ "for one event type in the same class. Event type: " 
 							+ params[0] + ". Class: " + obj.getClass());
 				}
 				
@@ -104,6 +106,7 @@ public class ObjectsMeta {
 		HashSet<Object> targetReceivers;
 		Class<? extends Object> eventClass;
 		Entry<Class<? extends Object>, Method> producerCallback;
+		EventCallback eventCallback;
 		
 		while (producerCallbacks.hasNext()) {
 			producerCallback = producerCallbacks.next();
@@ -111,11 +114,14 @@ public class ObjectsMeta {
 			
 			targetReceivers = receivers.get(eventClass);
 			if (targetReceivers != null && targetReceivers.size() > 0) {
-				event = produceEvent(eventClass, obj);
+				event = mProducerCallbacks.get(eventClass).invoke(obj);
 				if (event != null) {
 					for (Object receiver : targetReceivers) {
 						meta = metas.get(receiver.getClass());
-						meta.dispatchEventIfCallbackExists(eventClass, event, receiver, callback);
+						eventCallback = meta.mEventCallbacks.get(eventClass);
+						if (eventCallback != null) {
+							callback.dispatchEvent(eventCallback, receiver, event);
+						}
 					}
 				}
 			}
@@ -136,34 +142,25 @@ public class ObjectsMeta {
 		ObjectsMeta meta;
 		Object producer;
 		Class<? extends Object> eventClass;
+		EventCallback eventCallback;
 		
 		while (eventClasses.hasNext()) {
 			eventClass = eventClasses.next();
 			producer = producers.get(eventClass);
 			if (producer != null) {
 				meta = metas.get(producer.getClass());
-				event = meta.produceEvent(eventClass, producer);
+				event = meta.mProducerCallbacks.get(eventClass).invoke(producer);
 				if (event != null) {
-					dispatchEventIfCallbackExists(eventClass, event, receiver, callback);
+					eventCallback = mEventCallbacks.get(eventClass);
+					if (eventCallback != null) {
+						callback.dispatchEvent(eventCallback, receiver, event);
+					}
 				}
 			}
 		}
 
 	}
 
-	private Object produceEvent(Class<? extends Object> eventClass, 
-			Object producer) throws Exception {
-		return mProducerCallbacks.get(eventClass).invoke(producer);
-	}
-
-	public void dispatchEventIfCallbackExists(Class<? extends Object> eventClass, 
-			Object event, Object receiver, EventDispatchCallback callback) throws Exception {
-		EventCallback eventCallback = mEventCallbacks.get(eventClass);
-		if (eventCallback != null) {
-			callback.dispatchEvent(eventCallback, receiver, event);
-		}
-	}
-	
 	public void unregisterFromProducers(Object obj,
 			HashMap<Class<? extends Object>, Object>producers) {
 		

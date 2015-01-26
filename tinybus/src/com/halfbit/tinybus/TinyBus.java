@@ -137,7 +137,7 @@ public class TinyBus implements Bus {
 	
 	// subscribers for certain event type
 	private final HashMap<Class<?>, HashSet<Object>> mEventSubscribers
-		= new HashMap<Class<?>, HashSet<Object>>(20);
+		= new HashMap<Class<?>, HashSet<Object>>();
 	
 	// producers for certain event type
 	private final HashMap<Class<?>, Object> mEventProducers 
@@ -325,15 +325,18 @@ public class TinyBus implements Bus {
 	}
 	
 	void processQueue() {
+		
 		Task task;
 		ObjectsMeta meta;
+		Object obj;
+		Class<?> objClass;
 		
 		mProcessing = true;
 		try {
 			
 			while((task = mTaskQueue.poll()) != null) {
-				final Object obj = task.obj;
-				final Class<?> objClass = obj.getClass();
+				obj = task.obj;
+				objClass = obj.getClass();
 				
 				switch (task.code) {
 				
@@ -394,7 +397,7 @@ public class TinyBus implements Bus {
 	
 	//-- inner tinybus implementation used extended features and callbacks
 	
-	private class TinyBusImpl implements EventDispatchCallback, LifecycleCallbacks, TaskCallbacks {
+	class TinyBusImpl implements EventDispatchCallback, LifecycleCallbacks, TaskCallbacks {
 
 		private WeakReference<Context> mContextRef;
 		private HashMap<Class<?>, Task> mDelayedTasks;
