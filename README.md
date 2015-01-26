@@ -18,14 +18,14 @@ TinyBus is
 
 TinyBus API in nutshell
 =======
- - `@Subscribe` annotates event handler methods running in the main thread
- - `@Subscribe(mode=Mode.Background)` annotates event handler methods running in a background thread
- - `@Subscribe(mode=Mode.Background, queue="web")` annotates event handler methods running in a serialized background queue
- - `@Produce` annotates methods delivering most recent events (aka sticky events)
- - `Bus.register(Object)` and `Bus.unregister(Object)` register and unregister objects with subscriber and producer methods
- - `Bus.hasRegistered(Object)` checks, whether given object is registered
- - `Bus.post(Object)` posts given event object
- - `Bus.postDelayed(Object, long)` and `Bus.cancelDelayed(Class)` schedules event delivery later in time and cancels it
+ - `@Subscribe` annotates event handler methods running in the main thread.
+ - `@Subscribe(mode=Mode.Background)` annotates event handler methods running in a background thread.
+ - `@Subscribe(mode=Mode.Background, queue="web")` annotates event handler methods running in a serialized background queue.
+ - `@Produce` annotates methods delivering most recent events (aka sticky events).
+ - `Bus.register(Object)` and `Bus.unregister(Object)` register and unregister objects with subscriber and producer methods.
+ - `Bus.hasRegistered(Object)` checks, whether given object is registered.
+ - `Bus.post(Object)` posts given event object.
+ - `Bus.postDelayed(Object, long)` and `Bus.cancelDelayed(Class)` schedules event delivery later in time and cancels it.
 
 TinyBus quick start
 =======
