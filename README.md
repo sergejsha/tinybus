@@ -127,6 +127,10 @@ Proguard configuration (Version 2.1.x and below)
     @com.halfbit.tinybus.Subscribe public *;
     @com.halfbit.tinybus.Produce public *;
 }
+
+-keepclassmembers enum com.halfbit.tinybus.Subscribe$Mode {
+	public *;
+}
 ```
 
 Proguard configuration (Version 3)
