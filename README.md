@@ -119,7 +119,17 @@ dependencies {
 }
 ```
 
-Proguard configuration
+Proguard configuration (Version 2.1.x and below)
+=======
+
+```
+-keepclassmembers class ** {
+    @com.halfbit.tinybus.Subscribe public *;
+    @com.halfbit.tinybus.Produce public *;
+}
+```
+
+Proguard configuration (Version 3)
 =======
 
 ```
