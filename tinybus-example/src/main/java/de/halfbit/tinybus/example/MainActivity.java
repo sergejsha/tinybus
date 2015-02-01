@@ -17,21 +17,22 @@ import de.halfbit.tinybus.wires.ShakeEventWire.ShakeEvent;
 
 public class MainActivity extends Activity {
 
-	private Bus mBus;
+	private TinyBus mBus;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		// Create a bus and attach it to activity
-		mBus = TinyBus.from(this)
-			.wire(new ShakeEventWire())
-			.wire(new ConnectivityWire(ConnectionStateEvent.class))
-			.wire(new BatteryWire())
-			.wire(new BroadcastReceiverWire(
-					Intent.ACTION_POWER_CONNECTED, 
-					Intent.ACTION_POWER_DISCONNECTED));
+        mBus = TinyBus.from(this);
+        if (savedInstanceState == null) {
+            mBus.wire(new ShakeEventWire())
+                .wire(new ConnectivityWire(ConnectionStateEvent.class))
+                .wire(new BatteryWire())
+                .wire(new BroadcastReceiverWire(
+                        Intent.ACTION_POWER_CONNECTED, 
+                        Intent.ACTION_POWER_DISCONNECTED));
+        }
 	}
 
 	@Override

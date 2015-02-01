@@ -1,0 +1,26 @@
+// apply from: '../gradle-mvn-push.gradle'
+apply plugin: 'com.android.application'
+
+android {
+	compileSdkVersion 21
+	buildToolsVersion '21.1.2'
+
+	defaultConfig {
+		applicationId 'de.halfbit.tinybus.example'
+		versionCode 1
+		versionName '1.0'
+
+		minSdkVersion 14
+		targetSdkVersion 21
+	}
+
+	lintOptions {
+		abortOnError false
+	}	
+}
+
+dependencies {
+    compile 'com.android.support:appcompat-v7:21.0.3'
+    compile project(':tinybus')
+    compile project(':tinybus-extensions')
+}
