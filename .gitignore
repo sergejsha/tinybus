@@ -27,5 +27,8 @@ proguard/
 .project
 .classpath
 
+# Android Studio
+*.iml
+
 # OSX
 .DS_Store
