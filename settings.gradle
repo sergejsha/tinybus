@@ -1,1 +1,1 @@
-include ':tinybus', ':tinybus-tests', ':tinybus-extensions', ':tinybus-example'
+include ':tinybus', ':tinybus-extensions', ':tinybus-example'
