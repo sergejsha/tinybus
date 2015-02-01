@@ -7,16 +7,17 @@ Faster implementation of [Otto][2] event bus with additional features you missed
 Version 3.0 (in test)
 =======
   - [x] Background processing queues
-  - [x] Delayed events
+  - [x] Post delayed events
+  - [x] Full Gradle support (Ant build is obsolate)
  
 TinyBus is
 =======
- - tiny (~ 30K jar)
+ - tiny (~ 26K jar)
  - fast (optimized for startup and event dispatching)
  - well tested (> 90 junit tests)
  - annotation based (no requiremens on method names, no interfaces to implement)
 
-TinyBus API in nutshell
+TinyBus API in a nutshell
 =======
  - `@Subscribe` annotates event handler methods running in the main thread.
  - `@Subscribe(mode=Mode.Background)` annotates event handler methods running in a background thread.
@@ -27,22 +28,6 @@ TinyBus API in nutshell
  - `Bus.post(Object)` posts given event object.
  - `Bus.postDelayed(Object, long)` and `Bus.cancelDelayed(Class)` schedules event delivery for later in time and cancels it.
 
-TinyBus quick start
-=======
-
-```java
-// 1. Create an event class
-public class LoadingEvent { /* with some fields, if required */ }
-   
-// 2. Prepare event callback method inside Activity, Fragment or any other class
-@Subscribe
-public void onEvent(LoadingEvent event) { /* event handler logic */ }
-// ... and register it in the bus
-bus.register(this);
-   
-// 3. post event to all registered subscribers
-bus.post(new LoadingEvent());
-```
 For a more detailed example check out [Getting started][4] step-by-step guide or example application.
 
 Performance reference tests
@@ -87,7 +72,7 @@ public class MainActivity extends Activity {
     }
 }
 ```
-More detailed example can be found in example application.
+More detailed usage example can be found in example application.
 
 Build
 =======
@@ -133,7 +118,7 @@ Proguard configuration (Version 2.1.x and below)
 }
 ```
 
-Proguard configuration (Version 3)
+Proguard configuration (Since version 3)
 =======
 
 ```
