@@ -43,15 +43,24 @@ Extensions is a unique feature of TinyBus. With it you can easily subscribe to c
 
 ```java
 public class MainActivity extends Activity {
-    private Bus mBus;
+    private TinyBus mBus;
         
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        // get bus instance and wire device shake event
-        mBus = TinyBus.from(this).wire(new ShakeEventWire());
+        // get bus instance 
+        mBus = TinyBus.from(this)
+        
+        if (savedInstanceState == null) {
+            // Note: ShakeEventWire stays wired when activity is re-created
+            //       on configuration change. That's why we register is 
+            //       only once inside if-statement.
+
+            // wire device shake event provider
+            mBus.wire(new ShakeEventWire());
+        }
     }
     
     @Override
