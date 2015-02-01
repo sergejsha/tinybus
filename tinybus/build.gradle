@@ -2,7 +2,7 @@
 apply plugin: 'com.android.library'
 
 android {
-	compileSdkVersion 'android-21'
+	compileSdkVersion 21
 	buildToolsVersion '21.1.2'
 
 	defaultConfig {
@@ -12,6 +12,8 @@ android {
 		testInstrumentationRunner "android.test.InstrumentationTestRunner"
         testHandleProfiling false
 	    testFunctionalTest true
+
+        consumerProguardFiles 'proguard-rules.pro'
 	}
 }
 
