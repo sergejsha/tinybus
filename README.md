@@ -94,7 +94,7 @@ dependencies {
 }
 ```
 
-Proguard configuration (Version 2.1.x and below)
+ProGuard configuration
 =======
 
 If you use Gradle build, then you don't need to configure anything, because it will use proper configuration already delivered with Android library archive. Otherwise you can use the configuration below:
