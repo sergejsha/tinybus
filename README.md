@@ -1,6 +1,6 @@
-Faster implementation of [Otto][2] event bus with additional features you missed.
-
 ![tinybus][1]
+
+TinyBus is the faster implementation of [Otto][2] event bus with additional features you missed.
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
 
