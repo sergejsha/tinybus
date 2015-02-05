@@ -19,6 +19,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -492,6 +493,14 @@ public class TinyBus implements Bus {
 					wireable.onDestroy();
 				}
 			}
+            if (mDelayedTasks != null && mDelayedTasks.size() > 0) {
+                Handler handler = getMainHandlerNotNull();
+                Collection<Task> tasks = mDelayedTasks.values();
+                for (Task task : tasks) {
+                    handler.removeCallbacks(task);
+                }
+                mDelayedTasks.clear();
+            }
 		}
 		
 		public Context getNotNullContext() {

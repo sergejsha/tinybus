@@ -351,4 +351,34 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 		bus.cancelDelayed(TimedEvent.class);
 		// no exceptions, ok
 	}
+
+    public void testCancelDelayedOnDestroy() throws InterruptedException {
+
+        final CountDownLatch initLatch = new CountDownLatch(1);
+        final Callbacks callback = new Callbacks() {
+            @Subscribe
+            public void onEvent(String event) {
+                onCallback(event);
+            }
+        };
+
+        // initialize in main thread
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                bus = new TinyBus(getInstrumentation().getContext());
+                bus.register(callback);
+                initLatch.countDown();
+            }
+        });
+
+        // wait for initialization
+        initLatch.await(3, TimeUnit.SECONDS);
+
+        bus.postDelayed("event to cancel", 100);
+        bus.getLifecycleCallbacks().onDestroy();
+
+        SystemClock.sleep(200);
+        callback.assertNoEvents();
+    }
 }
