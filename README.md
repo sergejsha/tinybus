@@ -4,12 +4,6 @@
 
 Faster implementation of [Otto][2] event bus with additional features you missed.
 
-Version 3.0 (in test)
-=======
-  - [x] Background processing queues
-  - [x] Post delayed events
-  - [x] Full Gradle support (Ant build is obsolate)
- 
 TinyBus is
 =======
  - tiny (~ 26K jar)
@@ -83,61 +77,35 @@ public class MainActivity extends Activity {
 ```
 More detailed usage example can be found in example application.
 
-Build
-=======
-
-1. git clone git@github.com:beworker/tinybus.git
-2. cd <git>/tinybus
-3. gradle build (or ant release)
-
-Execute JUnit tests
-=======
-
-1. cd <git>/tinybus-tests
-2. ant test
-
 Gradle dependencies
 =======
 
 For pure event bus implementation
 ```
 dependencies {
-    compile 'de.halfbit:tinybus:2.1.+'
+    compile 'de.halfbit:tinybus:3.0.+'
 }
 ```
 For event bus with extensions
 ```
 dependencies {
-    compile 'de.halfbit:tinybus:2.1.+'
-    compile 'de.halfbit:tinybus-extensions:2.1.+'
+    compile 'de.halfbit:tinybus:3.0.+'
+    compile 'de.halfbit:tinybus-extensions:3.0.+'
 }
 ```
 
 Proguard configuration (Version 2.1.x and below)
 =======
 
+If you use Gradle build, then you don't need to configure anything, because it will use proper configuration already delivered with Android library archive. Otherwise you can use the configuration below:
 ```
--keepclassmembers class ** {
-    @com.halfbit.tinybus.Subscribe public *;
-    @com.halfbit.tinybus.Produce public *;
-}
-
--keepclassmembers enum com.halfbit.tinybus.Subscribe$Mode {
-	public *;
-}
-```
-
-Proguard configuration (Since version 3)
-=======
-
-```
--keepclassmembers class ** {
+-keepclassmembers, allowobfuscation class ** {
     @de.halfbit.tinybus.Subscribe public *;
     @de.halfbit.tinybus.Produce public *;
 }
 ```
 
-Used in
+Used by
 =======
 
  - [franco.Kernel updater][6]
