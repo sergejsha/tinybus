@@ -2,7 +2,7 @@
 
 TinyBus is the faster implementation of [Otto][2] event bus with additional features you missed.
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software)
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=beworker&url=https://github.com/beworker/tinybus&title=tinybus&language=java&tags=github&category=software) [![Travis build](https://travis-ci.org/beworker/tinybus.svg?branch=master])
 
 TinyBus is
 =======
