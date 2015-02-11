@@ -233,12 +233,54 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 		callbacks1.assertNoEvents();
 		callbacks2.assertNoEvents();
 	}
-	
+
+    public void testPostDelayedInPostDelayed() throws InterruptedException {
+
+        final long delayTime = 100l;
+        final CountDownLatch initLatch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        final Callbacks callbacks1 = new Callbacks() {
+            @Subscribe(mode=Mode.Background)
+            public void onEvent(TimedEvent event) {
+                onCallback(new ReceivedTimedEvent(event));
+                if (event.id == 1) {
+                    bus.postDelayed(new TimedEvent(2), delayTime);
+                }
+                synchronized (latch) {
+                    latch.countDown();
+                }
+            }
+        };
+
+        // initialize in main thread
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                bus = new TinyBus(getInstrumentation().getContext());
+                bus.register(callbacks1);
+                initLatch.countDown();
+            }
+        });
+
+        // wait for initialization
+        initLatch.await(3, TimeUnit.SECONDS);
+
+        // post from a background thread
+        bus.postDelayed(new TimedEvent(1), delayTime);
+
+        // wait for events
+        latch.await(3, TimeUnit.SECONDS);
+
+        // assert we receive both events
+        callbacks1.assertEqualEvents(new TimedEvent(1), new TimedEvent(2));
+    }
+
 	public void testPostDelayedBackgroundThreadAndReceive() throws InterruptedException {
 		
 		final long delayTime = 100l;
 		final CountDownLatch initLatch = new CountDownLatch(1);		
-		final CountDownLatch latch = new CountDownLatch(2);		
+		final CountDownLatch latch = new CountDownLatch(2);
 		
 		final Callbacks callbacks1 = new Callbacks() {
 			@Subscribe
@@ -249,7 +291,7 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 				}
 			}
 		}; 
-		
+
 		final Callbacks callbacks2 = new Callbacks() {
 			@Subscribe(mode=Mode.Background)
 			public void onEvent(TimedEvent event) {
@@ -258,7 +300,7 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 					latch.countDown();
 				}
 			}
-		}; 
+		};
 		
 		// initialize in main thread
 		handler.post(new Runnable() {
@@ -279,8 +321,8 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 		
 		// wait for events
 		latch.await(3, TimeUnit.SECONDS);
-		
-		final ReceivedTimedEvent expected = new ReceivedTimedEvent(1);
+
+        final ReceivedTimedEvent expected = new ReceivedTimedEvent(1);
 		
 		callbacks1.assertEqualEvents(expected);
 		callbacks1.iterate(new EventIterator() {
@@ -290,7 +332,7 @@ public class DelayedEventsTest extends InstrumentationTestCase {
 				assertTrue(e.getDispatchTime() >= delayTime);
 			}
 		});
-		
+
 		callbacks2.assertEqualEvents(expected);
 		callbacks2.iterate(new EventIterator() {
 			@Override

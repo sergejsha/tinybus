@@ -82,12 +82,15 @@ public class Task implements Runnable {
 	@Override
 	public void run() {
 		switch (code) {
+
 			case CODE_DISPATCH_FROM_BACKGROUND:
 				callbacks.onPostFromBackground(this);
 				break;
+
 			case CODE_POST_DELAYED:
 				callbacks.onPostDelayed(this);
 				break;
+
 			default: 
 				throw new IllegalStateException(String.valueOf(code));
 		}

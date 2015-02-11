@@ -400,38 +400,38 @@ public class TinyBus implements Bus {
 	class TinyBusImpl implements EventDispatchCallback, LifecycleCallbacks, TaskCallbacks {
 
 		private WeakReference<Context> mContextRef;
+
+        // list of delayed tasks accessed from different threads
 		private HashMap<Class<?>, Task> mDelayedTasks;
 		
 		//-- delayed events
 		
 		public void postDelayed(Object event, long delayMillis, Handler handler) {
-			Task task;
-			synchronized (this) {
-				if (mDelayedTasks == null) {
-					mDelayedTasks = new HashMap<Class<?>, Task>();
-				}
-				task = mDelayedTasks.get(event.getClass());
-				if (task == null) {
-					task = Task.obtainTask(TinyBus.this, Task.CODE_POST_DELAYED, event)
-							.setTaskCallbacks(this);
-					mDelayedTasks.put(event.getClass(), task);
-					
-				} else {
-					handler.removeCallbacks(task);
-					// replace event and reuse task
-					task.obj = event;
-				}
-			}
+            Task task;
+            synchronized (this) {
+                if (mDelayedTasks == null) {
+                    mDelayedTasks = new HashMap<Class<?>, Task>();
+                }
+                task = mDelayedTasks.get(event.getClass());
+                if (task == null) {
+                    task = Task.obtainTask(TinyBus.this, Task.CODE_POST_DELAYED, event)
+                            .setTaskCallbacks(this);
+                    mDelayedTasks.put(event.getClass(), task);
+                } else {
+                    handler.removeCallbacks(task);
+                    task.obj = event;
+                }
+            }
 			handler.postDelayed(task, delayMillis);
 		}
 
 		public void cancelDelayed(Class<?> eventClass, Handler handler) {
-			Task task = null;
-			synchronized (this) {
-				if (mDelayedTasks != null) {
-					task = mDelayedTasks.remove(eventClass);
-				}
-			}
+            Task task = null;
+            synchronized (this) {
+                if (mDelayedTasks != null) {
+                    task = mDelayedTasks.remove(eventClass);
+                }
+            }
 			if (task != null) {
 				handler.removeCallbacks(task);
 				task.recycle();
@@ -493,13 +493,16 @@ public class TinyBus implements Bus {
 					wireable.onDestroy();
 				}
 			}
-            if (mDelayedTasks != null && mDelayedTasks.size() > 0) {
-                Handler handler = getMainHandlerNotNull();
-                Collection<Task> tasks = mDelayedTasks.values();
-                for (Task task : tasks) {
-                    handler.removeCallbacks(task);
+            synchronized (this) {
+                if (mDelayedTasks != null && mDelayedTasks.size() > 0) {
+                    Handler handler = getMainHandlerNotNull();
+                    Collection<Task> tasks = mDelayedTasks.values();
+                    for (Task task : tasks) {
+                        handler.removeCallbacks(task);
+                        task.recycle();
+                    }
+                    mDelayedTasks.clear();
                 }
-                mDelayedTasks.clear();
             }
 		}
 		
@@ -524,9 +527,9 @@ public class TinyBus implements Bus {
 		@Override
 		public void onPostDelayed(Task task) {
 			synchronized (this) {
-				mDelayedTasks.remove(task.obj);
+				mDelayedTasks.remove(task.obj.getClass());
+			    task.code = Task.CODE_POST;
 			}
-			task.code = Task.CODE_POST;
 			mTaskQueue.offer(task);
 			if (!mProcessing) processQueue();
 		}
