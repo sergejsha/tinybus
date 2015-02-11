@@ -1,0 +1,10 @@
+language: android
+android:
+    components:
+        # latest versions
+        - platform-tools
+        - tools
+        - build-tools
+        - android-21
+        
+script: gradle build connectedCheck
