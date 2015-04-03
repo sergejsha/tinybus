@@ -34,7 +34,7 @@ import de.halfbit.tinybus.impl.ObjectsMeta;
 import de.halfbit.tinybus.impl.Task;
 import de.halfbit.tinybus.impl.TaskQueue;
 import de.halfbit.tinybus.impl.TinyBusDepot;
-import de.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
+import de.halfbit.tinybus.impl.ObjectsMeta.SubscriberCallback;
 import de.halfbit.tinybus.impl.ObjectsMeta.EventDispatchCallback;
 import de.halfbit.tinybus.impl.Task.TaskCallbacks;
 import de.halfbit.tinybus.impl.TinyBusDepot.LifecycleCallbacks;
@@ -69,10 +69,10 @@ public class TinyBus implements Bus {
 	 * @author sergej
 	 */
 	public static abstract class Wireable {
-		
-		protected Bus bus;
-		protected Context context;
-		
+
+        protected Bus bus;
+        protected Context context;
+
 		protected void onCreate(Bus bus, Context context) {
 			this.bus = bus;
 			this.context = context;
@@ -232,7 +232,10 @@ public class TinyBus implements Bus {
 		if (event == null) {
 			throw new NullPointerException("Event must not be null");
 		}
-		mImpl.postDelayed(event, delayMillis, getMainHandlerNotNull());
+        Handler handler = getMainHandlerNotNull();
+        if (handler.getLooper().getThread().isAlive()) {
+		    mImpl.postDelayed(event, delayMillis, handler);
+        } // otherwise the bus is already stopped
 	}
 	
 	@Override
@@ -261,6 +264,8 @@ public class TinyBus implements Bus {
 				|| context instanceof Service) {
 			wireable.onStart();
 		}
+
+        // TODO, what to do with already started activity?
 		return this;
 	}
 
@@ -367,12 +372,12 @@ public class TinyBus implements Bus {
 					case Task.CODE_POST: {
 						final HashSet<Object> receivers = mEventSubscribers.get(objClass);
 						if (receivers != null) {
-							EventCallback eventCallback;
+							SubscriberCallback subscriberCallback;
 							try {
 								for (Object receiver : receivers) {
 									meta = OBJECTS_METAS.get(receiver.getClass());
-									eventCallback = meta.getEventCallback(objClass);
-									mImpl.dispatchEvent(eventCallback, receiver, obj);
+									subscriberCallback = meta.getEventCallback(objClass);
+									mImpl.dispatchEvent(subscriberCallback, receiver, obj);
 								}
 							} catch (Exception e) {
 								throw handleExceptionOnEventDispatch(e);
@@ -441,18 +446,18 @@ public class TinyBus implements Bus {
 		//-- callbacks
 		
 		@Override
-		public void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception {
-			if (eventCallback.mode == Mode.Background) {
+		public void dispatchEvent(SubscriberCallback subscriberCallback, Object receiver, Object event) throws Exception {
+			if (subscriberCallback.mode == Mode.Background) {
 				Task task = Task.obtainTask(TinyBus.this, Task.CODE_DISPATCH_TO_BACKGROUND, event)
 						.setTaskCallbacks(this);
-				task.eventCallback = eventCallback;
+				task.subscriberCallback = subscriberCallback;
 				task.receiverRef = new WeakReference<Object>(receiver);
 				
 				Context context = getNotNullContext();
 				TinyBusDepot.get(context).getDispatcher().dispatchEventToBackground(task);
 				
 			} else {
-				eventCallback.method.invoke(receiver, event);
+				subscriberCallback.method.invoke(receiver, event);
 			}
 		}
 
@@ -538,7 +543,7 @@ public class TinyBus implements Bus {
 		public void onDispatchInBackground(Task task) throws Exception {
 			final Object receiver = task.receiverRef.get();
 			if (receiver != null) {
-				Method callbackMethod = task.eventCallback.method; 
+				Method callbackMethod = task.subscriberCallback.method;
 				if (callbackMethod.getParameterTypes().length == 2) {
 					// expect callback with two parameters
 					callbackMethod.invoke(receiver, task.obj, task.bus);

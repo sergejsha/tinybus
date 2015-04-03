@@ -81,10 +81,10 @@ public class Dispatcher {
 	void handlerProcessTask(Task task) {
 		assertDispatcherThread();
 		
-		SerialTaskQueue taskQueue = mQueuesMap.get(task.eventCallback.queue);
+		SerialTaskQueue taskQueue = mQueuesMap.get(task.subscriberCallback.queue);
 		if (taskQueue == null) {
-			taskQueue = new SerialTaskQueue(task.eventCallback.queue);
-			mQueuesMap.put(task.eventCallback.queue, taskQueue);
+			taskQueue = new SerialTaskQueue(task.subscriberCallback.queue);
+			mQueuesMap.put(task.subscriberCallback.queue, taskQueue);
 			mQueuesList.add(taskQueue);
 		}
 		taskQueue.offer(task);
@@ -96,7 +96,7 @@ public class Dispatcher {
 		assertDispatcherThread();
 		
 		// update task queue status
-		SerialTaskQueue queue = mQueuesMap.get(task.eventCallback.queue);
+		SerialTaskQueue queue = mQueuesMap.get(task.subscriberCallback.queue);
 		queue.setProcessing(false);
 		
 		task.recycle();

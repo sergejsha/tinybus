@@ -18,7 +18,7 @@ package de.halfbit.tinybus.impl;
 import java.lang.ref.WeakReference;
 
 import de.halfbit.tinybus.TinyBus;
-import de.halfbit.tinybus.impl.ObjectsMeta.EventCallback;
+import de.halfbit.tinybus.impl.ObjectsMeta.SubscriberCallback;
 
 public class Task implements Runnable {
 	
@@ -48,7 +48,7 @@ public class Task implements Runnable {
 	public TaskCallbacks callbacks;
 	
 	// dispatch in background
-	public EventCallback eventCallback;
+	public SubscriberCallback subscriberCallback;
 	public WeakReference<Object> receiverRef;
 	
 	private Task() { }

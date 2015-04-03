@@ -15,7 +15,7 @@ public class ConnectivityWire extends Wireable {
 
 	//-- public events
 
-	/** Event to be sent when connection on/off event happends. */
+	/** Event to be sent when connection on/off event happens. */
 	public static class ConnectionStateEvent {
 		protected final boolean mConnected;
 		
@@ -164,7 +164,7 @@ public class ConnectivityWire extends Wireable {
 					context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		}
 		NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
-		if (mpProducedEventClass == ConnectionStateEvent.class) {
+		if (mpProducedEventClass.equals(ConnectionStateEvent.class)) {
 			mConnectionStateEvent = new ConnectionStateEvent(networkInfo);
 			bus.post(mConnectionStateEvent);
 			

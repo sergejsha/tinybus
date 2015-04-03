@@ -28,9 +28,9 @@ public class ObjectsMeta {
 
 	//-- static classes and interfaces
 	
-	public static class EventCallback {
+	public static class SubscriberCallback {
 		
-		public EventCallback(Method method, Subscribe ann) {
+		public SubscriberCallback(Method method, Subscribe ann) {
 			this.method = method;
 			this.mode = ann.mode();
 			this.queue = ann.queue();
@@ -39,18 +39,18 @@ public class ObjectsMeta {
 		public final Method method;
 		public final int mode;
 		public final String queue;
-		
 	}
 	
 	/** Implementation of this callback handles actual event dispatching. */
 	public static interface EventDispatchCallback {
-		void dispatchEvent(EventCallback eventCallback, Object receiver, Object event) throws Exception;
+		void dispatchEvent(SubscriberCallback subscriberCallback,
+                           Object receiver, Object event) throws Exception;
 	}
 	
 	//-- implementation
 	
-	private final HashMap<Class<? extends Object>/*event class*/, EventCallback> mEventCallbacks
-		= new HashMap<Class<? extends Object>, EventCallback>();
+	private final HashMap<Class<? extends Object>/*event class*/, SubscriberCallback> mEventCallbacks
+		= new HashMap<Class<? extends Object>, SubscriberCallback>();
 	
 	private HashMap<Class<? extends Object>/*event class*/, Method> mProducerCallbacks;
 	
@@ -58,7 +58,7 @@ public class ObjectsMeta {
 		final Method[] methods = obj.getClass().getMethods();
 		
 		Class<?>[] params;
-		EventCallback callback;
+		SubscriberCallback callback;
 		Subscribe ann;
 		for (Method method : methods) {
 			if (method.isBridge() || method.isSynthetic()) {
@@ -68,7 +68,7 @@ public class ObjectsMeta {
 			ann = method.getAnnotation(Subscribe.class);
 			if (ann != null) {
 				params = method.getParameterTypes();
-				callback = mEventCallbacks.put(params[0], new EventCallback(method, ann));
+				callback = mEventCallbacks.put(params[0], new SubscriberCallback(method, ann));
 				if (callback != null) {
 					throw new IllegalArgumentException("Only one @Subscriber can be defined "
 							+ "for one event type in the same class. Event type: " 
@@ -84,7 +84,7 @@ public class ObjectsMeta {
 		}
 	}
 
-	public EventCallback getEventCallback(Class<?> eventClass) {
+	public SubscriberCallback getEventCallback(Class<?> eventClass) {
 		return mEventCallbacks.get(eventClass);
 	}
 
@@ -106,7 +106,7 @@ public class ObjectsMeta {
 		HashSet<Object> targetReceivers;
 		Class<? extends Object> eventClass;
 		Entry<Class<? extends Object>, Method> producerCallback;
-		EventCallback eventCallback;
+		SubscriberCallback subscriberCallback;
 		
 		while (producerCallbacks.hasNext()) {
 			producerCallback = producerCallbacks.next();
@@ -118,9 +118,9 @@ public class ObjectsMeta {
 				if (event != null) {
 					for (Object receiver : targetReceivers) {
 						meta = metas.get(receiver.getClass());
-						eventCallback = meta.mEventCallbacks.get(eventClass);
-						if (eventCallback != null) {
-							callback.dispatchEvent(eventCallback, receiver, event);
+						subscriberCallback = meta.mEventCallbacks.get(eventClass);
+						if (subscriberCallback != null) {
+							callback.dispatchEvent(subscriberCallback, receiver, event);
 						}
 					}
 				}
@@ -142,7 +142,7 @@ public class ObjectsMeta {
 		ObjectsMeta meta;
 		Object producer;
 		Class<? extends Object> eventClass;
-		EventCallback eventCallback;
+		SubscriberCallback subscriberCallback;
 		
 		while (eventClasses.hasNext()) {
 			eventClass = eventClasses.next();
@@ -151,9 +151,9 @@ public class ObjectsMeta {
 				meta = metas.get(producer.getClass());
 				event = meta.mProducerCallbacks.get(eventClass).invoke(producer);
 				if (event != null) {
-					eventCallback = mEventCallbacks.get(eventClass);
-					if (eventCallback != null) {
-						callback.dispatchEvent(eventCallback, receiver, event);
+					subscriberCallback = mEventCallbacks.get(eventClass);
+					if (subscriberCallback != null) {
+						callback.dispatchEvent(subscriberCallback, receiver, event);
 					}
 				}
 			}

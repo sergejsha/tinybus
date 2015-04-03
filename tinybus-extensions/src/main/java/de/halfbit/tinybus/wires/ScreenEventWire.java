@@ -13,7 +13,7 @@ public class ScreenEventWire extends Wireable {
 	// -- public events
 
 	public static class ScreenEvent {
-		public final boolean isScreenOn;
+		private final boolean isScreenOn;
 
 		public ScreenEvent(boolean isScreenOn) {
 			this.isScreenOn = isScreenOn;

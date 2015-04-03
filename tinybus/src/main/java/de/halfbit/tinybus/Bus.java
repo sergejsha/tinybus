@@ -70,19 +70,19 @@ package de.halfbit.tinybus;
  */
 public interface Bus {
 
-	/**
-	 * Registers all handler methods on {@code object} to receive events and producer methods to provide events.
-	 * <p>
-	 * If any subscribers are registering for types which already have a producer they will be called immediately
-	 * with the result of calling that producer.
-	 * <p>
-	 * If any producers are registering for types which already have subscribers, each subscriber will be called with
-	 * the value from the result of calling the producer.
-	 *
-	 * @param object object whose handler methods should be registered.
-	 * @throws NullPointerException if the object is null.
-	 */
-	void register(Object object);
+    /**
+     * Registers all handler methods on {@code object} to receive events and producer methods to provide events.
+     * <p>
+     * If any subscribers are registering for types which already have a producer they will be called immediately
+     * with the result of calling that producer.
+     * <p>
+     * If any producers are registering for types which already have subscribers, each subscriber will be called with
+     * the value from the result of calling the producer.
+     *
+     * @param object object whose handler methods should be registered.
+     * @throws NullPointerException if the object is null.
+     */
+    void register(Object object);
 
 	/**
 	 * Unregisters all producer and handler methods on a registered {@code object}.
