@@ -110,6 +110,7 @@ Used by
 
  - [franco.Kernel updater][6]
  - [Settings Extended][5]
+ - [Focus][7]
 
 License
 =======
@@ -137,3 +138,4 @@ License
 [4]: https://github.com/beworker/tinybus/wiki/Getting-Started
 [5]: https://play.google.com/store/apps/details?id=com.hb.settings
 [6]: https://play.google.com/store/apps/details?id=com.franco.kernel
+[7]: https://play.google.com/store/apps/details?id=com.franco.focus
