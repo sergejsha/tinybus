@@ -83,17 +83,17 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	public void onActivityStarted(Activity activity) {
 		TinyBus bus = mBuses.get(activity);
 		if (bus != null) {
-			
-			// if an activity was stopped but not destroyed,
-			// then we have to remove bus from transient state
-			int transientBusIndex = mTransientBuses.indexOfValue(bus);
-			if (transientBusIndex > -1) {
-				mTransientBuses.removeAt(transientBusIndex);
-			}
-			
-			bus.getLifecycleCallbacks().onStart();
-		}
-		if (DEBUG) Log.d(TAG, " ### STARTED, bus count: " + mBuses.size());
+            bus.getLifecycleCallbacks().onStart();
+
+            if (DEBUG) {
+                int transientBusIndex = mTransientBuses.indexOfValue(bus);
+                if (transientBusIndex > -1) {
+                    throw new IllegalStateException(
+                            "Unexpected transient bus left in the bucket after onCreate()");
+                }
+            }
+        }
+        if (DEBUG) Log.d(TAG, " ### STARTED, bus count: " + mBuses.size());
 	}
 	
 	@Override
@@ -109,26 +109,25 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	@Override
 	public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
 		if (savedInstanceState != null) {
+
 			// try to restore bus from transient state
-			
 			final int busId = savedInstanceState.getInt(KEY_BUS_ID, -1);
 			if (busId > -1) {
+
 				final TinyBus bus = mTransientBuses.get(busId);
-				if (DEBUG) {
-					if (bus == null) {
-						throw new IllegalStateException("Transient bus not found, id:" + busId);
+				if (bus != null) {
+
+					mTransientBuses.delete(busId);
+					bus.getLifecycleCallbacks().attachContext(activity);
+					mBuses.put(activity, bus);
+					
+					if (DEBUG) {
+						Log.d(TAG, " ### onCreated(), bus restored for " + activity +
+								", busId: " + busId +
+								", bus: " + bus +
+								", active buses: " + mBuses.size() +
+								", transient buses: " + mTransientBuses.size());
 					}
-				}
-				
-				mTransientBuses.delete(busId);
-				bus.getLifecycleCallbacks().attachContext(activity);
-				mBuses.put(activity, bus);
-				if (DEBUG) {
-					Log.d(TAG, " ### onCreated(), bus restored for " + activity + 
-							", busId: " + busId + 
-							", bus: " + bus + 
-							", active buses: " + mBuses.size() + 
-							", transient buses: " + mTransientBuses.size());
 				}
 			}
 		}
@@ -136,20 +135,25 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	
 	@Override
 	public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-		TinyBus bus = mBuses.get(activity);
-		if (bus != null) {
-			// store this bus into transient list to restore it later, 
-			// if activity is recreated
-			final int busId = mNextTransientBusId++;
-			mTransientBuses.put(busId, bus);
-			outState.putInt(KEY_BUS_ID, busId);
-			if (DEBUG) {
-				Log.d(TAG, " ### storing transient bus, id: " + busId + ", bus: " + bus);
-			}
-		}
-	}
-	
-	@Override public void onActivityResumed(Activity activity) { }
+        if (activity.isChangingConfigurations()) {
+
+            TinyBus bus = mBuses.get(activity);
+            if (bus != null) {
+
+                // Store this bus into transient list to
+                // restore it later, when activity is recreated
+                final int busId = mNextTransientBusId++;
+
+                mTransientBuses.put(busId, bus);
+                outState.putInt(KEY_BUS_ID, busId);
+                if (DEBUG) {
+                    Log.d(TAG, " ### storing transient bus, id: " + busId + ", bus: " + bus);
+                }
+            }
+        }
+    }
+
+    @Override public void onActivityResumed(Activity activity) { }
 	@Override public void onActivityPaused(Activity activity) { }
 
 	//-- inner lifecycle implementation
@@ -164,21 +168,23 @@ public class TinyBusDepot implements ActivityLifecycleCallbacks {
 	
 	void onContextDestroyed(Context context) {
 		TinyBus bus = mBuses.remove(context);
-		
-		boolean dontDestroyBus = context instanceof Activity 
-				&& ((Activity)context).isChangingConfigurations();
-		
-		if (bus != null && !dontDestroyBus) {
-			bus.getLifecycleCallbacks().onDestroy();
-			if (DEBUG) {
-				Log.d(TAG, " ### destroying bus: " + bus);
-			}
-		}
-		if (DEBUG) {
-			Log.d(TAG, " ### onDestroy() " + context +
-				", active buses: " + mBuses.size() + 
-				", transient buses: " + mTransientBuses.size());
-		}
+
+        if (bus != null) {
+            boolean keepBusInstance = context instanceof Activity
+                    && ((Activity)context).isChangingConfigurations();
+
+            if (!keepBusInstance) {
+                bus.getLifecycleCallbacks().onDestroy();
+                if (DEBUG) {
+                    Log.d(TAG, " ### destroying bus: " + bus);
+                }
+            }
+            if (DEBUG) {
+                Log.d(TAG, " ### onDestroy() " + context +
+                        ", active buses: " + mBuses.size() +
+                        ", transient buses: " + mTransientBuses.size());
+            }
+        }
 	}
 	
 }
