@@ -39,7 +39,8 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 	void assertResult(int index, Object event, String threadName) {
 		CallbackResult result = results.get(index);
 		assertEquals(event, result.event);
-		assertEquals(threadName, result.threadName);
+		assertNotNull(result.threadName);
+		assertTrue(result.threadName.startsWith(threadName));
 	}
 	
 	@Override
@@ -168,7 +169,7 @@ public class BackgroundQueuesTest extends InstrumentationTestCase {
 		latch.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 		
 		assertEventsNumber(1);
-		assertResult(0, "event a", "tinybus-worker-0");
+		assertResult(0, "event a", "tinybus-worker-");
 	}
 	
 	@UiThreadTest
