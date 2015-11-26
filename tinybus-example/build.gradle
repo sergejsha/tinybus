@@ -2,16 +2,16 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion 21
-	buildToolsVersion '21.1.2'
+  compileSdkVersion 22
+  buildToolsVersion '23.0.2'
 
 	defaultConfig {
 		applicationId 'de.halfbit.tinybus.example'
 		versionCode 1
 		versionName '1.0'
 
-		minSdkVersion 14
-		targetSdkVersion 21
+    minSdkVersion 10
+    targetSdkVersion 22
 	}
 
 	lintOptions {
@@ -20,7 +20,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:21.0.3'
+  compile 'com.android.support:appcompat-v7:22.+'
     compile project(':tinybus')
     compile project(':tinybus-extensions')
 }

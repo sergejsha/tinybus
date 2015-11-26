@@ -15,176 +15,120 @@
  */
 package de.halfbit.tinybus.impl;
 
-import java.util.WeakHashMap;
-
+import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Application;
-import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
-import android.os.Bundle;
+import android.os.Build;
 import android.util.Log;
 import android.util.SparseArray;
+
+import java.util.WeakHashMap;
+
 import de.halfbit.tinybus.TinyBus;
+import de.halfbit.tinybus.impl.v10.Compat;
+import de.halfbit.tinybus.impl.v10.TinyBusDepotCompat;
+import de.halfbit.tinybus.impl.v14.TinyBusDepotNative;
 import de.halfbit.tinybus.impl.workers.Dispatcher;
 
-public class TinyBusDepot implements ActivityLifecycleCallbacks {
+@TargetApi(Build.VERSION_CODES.GINGERBREAD_MR1)
+public abstract class TinyBusDepot {
+  /* [ CONSTANTS ] ================================================================================================= */
 
-	public static interface LifecycleCallbacks {
-		void attachContext(Context context);
-		void onStart();
-		void onStop();
-		void onDestroy();
-	}
-	
-	private static final boolean DEBUG = false;
-	private static final String TAG = TinyBusDepot.class.getSimpleName();
-	
-	private static final String KEY_BUS_ID = "de.halfbit.tinybus.id";
-	private static TinyBusDepot INSTANCE;
-	
-	public static TinyBusDepot get(Context context) {
-		if (INSTANCE == null) {
-			INSTANCE = new TinyBusDepot(context);
-		}
-		return INSTANCE;
-	}
+  protected static final boolean DEBUG = true;
+  protected static final String TAG = TinyBusDepot.class.getSimpleName();
+  protected static final String KEY_BUS_ID = "de.halfbit.tinybus.id";
 
-	private Dispatcher mDispatcher;
-	
-	private TinyBusDepot(Context context) {
-		final Application app = (Application) context.getApplicationContext();
-		app.registerActivityLifecycleCallbacks(this);
-	}
+	/* [ STATIC MEMBERS ] ============================================================================================ */
 
-	//-- bus management
+  private static TinyBusDepot INSTANCE;
 
-	private final WeakHashMap<Context, TinyBus> mBuses = new WeakHashMap<Context, TinyBus>();
-	private final SparseArray<TinyBus> mTransientBuses = new SparseArray<TinyBus>(3);
-	private int mNextTransientBusId;
-	
-	public TinyBus createBusInContext(Context context) {
-		final TinyBus bus = new TinyBus(context);
-		mBuses.put(context, bus);
-		return bus;
-	}
-	
-	public TinyBus getBusInContext(Context context) {
-		return mBuses.get(context);
-	}
-	
-	public synchronized Dispatcher getDispatcher() {
-		if (mDispatcher == null) {
-			mDispatcher = new Dispatcher();
-		}
-		return mDispatcher;
-	}
-	
-	@Override
-	public void onActivityStarted(Activity activity) {
-		TinyBus bus = mBuses.get(activity);
-		if (bus != null) {
-            bus.getLifecycleCallbacks().onStart();
+	/* [ MEMBERS ] =================================================================================================== */
 
-            if (DEBUG) {
-                int transientBusIndex = mTransientBuses.indexOfValue(bus);
-                if (transientBusIndex > -1) {
-                    throw new IllegalStateException(
-                            "Unexpected transient bus left in the bucket after onCreate()");
-                }
-            }
-        }
-        if (DEBUG) Log.d(TAG, " ### STARTED, bus count: " + mBuses.size());
-	}
-	
-	@Override
-	public void onActivityStopped(Activity activity) {
-		onContextStopped(activity);
-	}
-	
-	@Override
-	public void onActivityDestroyed(Activity activity) {
-		onContextDestroyed(activity);
-	}
-	
-	@Override
-	public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-		if (savedInstanceState != null) {
+  //-- bus management
 
-			// try to restore bus from transient state
-			final int busId = savedInstanceState.getInt(KEY_BUS_ID, -1);
-			if (busId > -1) {
+  protected final WeakHashMap<Context, TinyBus> mBuses = new WeakHashMap<Context, TinyBus>();
+  protected final SparseArray<TinyBus> mTransientBuses = new SparseArray<TinyBus>(3);
+  protected int mNextTransientBusId;
 
-				final TinyBus bus = mTransientBuses.get(busId);
-				if (bus != null) {
+  private Dispatcher mDispatcher;
 
-					mTransientBuses.delete(busId);
-					bus.getLifecycleCallbacks().attachContext(activity);
-					mBuses.put(activity, bus);
-					
-					if (DEBUG) {
-						Log.d(TAG, " ### onCreated(), bus restored for " + activity +
-								", busId: " + busId +
-								", bus: " + bus +
-								", active buses: " + mBuses.size() +
-								", transient buses: " + mTransientBuses.size());
-					}
-				}
-			}
-		}
-	}
-	
-	@Override
-	public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-        if (activity.isChangingConfigurations()) {
+	/* [ CONSTRUCTORS ] ============================================================================================== */
 
-            TinyBus bus = mBuses.get(activity);
-            if (bus != null) {
+  protected TinyBusDepot(Context context) {
+  }
 
-                // Store this bus into transient list to
-                // restore it later, when activity is recreated
-                final int busId = mNextTransientBusId++;
+	/* [ STATIC METHODS ] ============================================================================================ */
 
-                mTransientBuses.put(busId, bus);
-                outState.putInt(KEY_BUS_ID, busId);
-                if (DEBUG) {
-                    Log.d(TAG, " ### storing transient bus, id: " + busId + ", bus: " + bus);
-                }
-            }
-        }
+  public static TinyBusDepot get(Context context) {
+    if (INSTANCE == null) {
+      INSTANCE = (Compat.IS_NATIVE) ?
+          new TinyBusDepotNative(context) :
+          new TinyBusDepotCompat(context);
     }
 
-    @Override public void onActivityResumed(Activity activity) { }
-	@Override public void onActivityPaused(Activity activity) { }
+    return INSTANCE;
+  }
 
-	//-- inner lifecycle implementation
-	
-	void onContextStopped(Context context) {
-		TinyBus bus = mBuses.get(context);
-		if (bus != null) {
-			bus.getLifecycleCallbacks().onStop();
-		}
-		if (DEBUG) Log.d(TAG, " ### STOPPED, bus count: " + mBuses.size());
-	}
-	
-	void onContextDestroyed(Context context) {
-		TinyBus bus = mBuses.remove(context);
+	/* [ GETTER / SETTER METHODS ] =================================================================================== */
 
-        if (bus != null) {
-            boolean keepBusInstance = context instanceof Activity
-                    && ((Activity)context).isChangingConfigurations();
+  public synchronized Dispatcher getDispatcher() {
+    if (mDispatcher == null) {
+      mDispatcher = new Dispatcher();
+    }
 
-            if (!keepBusInstance) {
-                bus.getLifecycleCallbacks().onDestroy();
-                if (DEBUG) {
-                    Log.d(TAG, " ### destroying bus: " + bus);
-                }
-            }
-            if (DEBUG) {
-                Log.d(TAG, " ### onDestroy() " + context +
-                        ", active buses: " + mBuses.size() +
-                        ", transient buses: " + mTransientBuses.size());
-            }
+    return mDispatcher;
+  }
+
+	/* [ IMPLEMENTATION & HELPERS ] ================================================================================== */
+
+  public TinyBus createBusInContext(Context context) {
+    final TinyBus bus = new TinyBus(context);
+    mBuses.put(context, bus);
+    return bus;
+  }
+
+  public TinyBus getBusInContext(Context context) {
+    return mBuses.get(context);
+  }
+
+  protected void onContextDestroyed(Context context) {
+    TinyBus bus = mBuses.remove(context);
+
+    if (bus != null) {
+      boolean keepBusInstance = context instanceof Activity
+          && Compat.isChangingConfigurations((Activity) context);
+
+      if (!keepBusInstance) {
+        bus.getLifecycleCallbacks().onDestroy();
+        if (DEBUG) {
+          Log.d(TAG, " ### destroying bus: " + bus);
         }
-	}
-	
+      }
+      if (DEBUG) {
+        Log.d(TAG, " ### onDestroy() " + context +
+            ", active buses: " + mBuses.size() +
+            ", transient buses: " + mTransientBuses.size());
+      }
+    }
+  }
+
+  protected void onContextStopped(Context context) {
+    TinyBus bus = mBuses.get(context);
+    if (bus != null) {
+      bus.getLifecycleCallbacks().onStop();
+    }
+    if (DEBUG) Log.d(TAG, " ### STOPPED, bus count: " + mBuses.size());
+  }
+
+	/* [ NESTED DECLARATIONS ] ======================================================================================= */
+
+  public interface LifecycleCallbacks {
+    void attachContext(Context context);
+
+    void onStart();
+
+    void onStop();
+
+    void onDestroy();
+  }
 }
