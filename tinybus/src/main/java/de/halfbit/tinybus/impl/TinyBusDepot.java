@@ -34,7 +34,7 @@ import de.halfbit.tinybus.impl.workers.Dispatcher;
 public abstract class TinyBusDepot {
   /* [ CONSTANTS ] ================================================================================================= */
 
-  protected static final boolean DEBUG = true;
+  protected static final boolean DEBUG = false;
   protected static final String TAG = TinyBusDepot.class.getSimpleName();
   protected static final String KEY_BUS_ID = "de.halfbit.tinybus.id";
 
