@@ -4,8 +4,8 @@ android:
         # latest versions
         - platform-tools
         - tools
-        - build-tools-22.0.1
-        - android-21
+        - build-tools-23.0.2
+        - android-22
 
 before_script:
     - echo no | android create avd --force -n test -t android-19 --abi armeabi-v7a
