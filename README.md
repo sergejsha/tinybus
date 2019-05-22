@@ -1,3 +1,5 @@
+This project is **@deprecated** in favor of [RxJava](https://github.com/ReactiveX/RxJava). It offers the same event-driven programming model as TinyBus, but it's more capable and offers better control of threading.
+
 ![tinybus][1]
 
 TinyBus is the faster implementation of [Otto][2] event bus with additional features you missed.
